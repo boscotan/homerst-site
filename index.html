@@ -60,6 +60,17 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
 .lbl.chg{pointer-events:auto;cursor:pointer;background:#2f6b5a;color:#fff;border-color:#2f6b5a;font-weight:600}
 .lbl.room{font-family:var(--f-mono);font-size:10px}
 #lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+[hidden]{display:none!important}
+#fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+.cap{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px);display:flex;gap:12px;align-items:center;background:rgba(15,20,18,.82);color:#fff;border-radius:10px;padding:10px 12px 10px 16px;font:500 15px var(--f-body);line-height:1.35}
+.cap .btn{background:transparent;color:#fff;border-color:rgba(255,255,255,.35)}
+.capn{font:500 11px var(--f-mono);opacity:.7}
+.walkhud{position:absolute;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.walkhud .btn{background:color-mix(in srgb,var(--panel) 90%,transparent)}
+.pad{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,44px);gap:4px}
+.pad button{padding:0;font-size:16px;touch-action:none;user-select:none;-webkit-user-select:none}
+.pad [data-k="w"]{grid-column:2}.pad [data-k="a"]{grid-column:1;grid-row:2}.pad [data-k="s"]{grid-column:2;grid-row:2}.pad [data-k="d"]{grid-column:3;grid-row:2}
+@media (hover:hover) and (pointer:fine){.pad{display:none}}
 @media (max-width:820px){
   .app{grid-template-columns:1fr;grid-template-rows:minmax(0,56%) minmax(0,44%)}
   .panel{border-left:0;border-top:1px solid var(--line);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -74,6 +85,12 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
     <div class="badge" id="badge">After</div>
     <div class="compass" title="North (street side)"><svg id="needle" width="30" height="30" viewBox="-15 -15 30 30" aria-hidden="true"><path d="M0 -12 L5 4 L0 1 L-5 4 Z" fill="#c2412d"/><path d="M0 12 L5 4 L0 1 L-5 4 Z" fill="currentColor" opacity=".35"/><text x="0" y="-5" font-size="0" fill="none">N</text></svg></div>
     <div class="hint">Drag to orbit · scroll or pinch to zoom · right-drag to pan</div>
+    <div id="fade" aria-hidden="true"></div>
+    <div id="cap" class="cap" hidden><span id="capN" class="capn"></span><span id="capTxt"></span><button class="btn" id="bCapStop">Stop</button></div>
+    <div id="walkHud" class="walkhud" hidden>
+      <div class="pad"><button class="btn" data-k="w" aria-label="Forward">▲</button><button class="btn" data-k="a" aria-label="Left">◀</button><button class="btn" data-k="s" aria-label="Back">▼</button><button class="btn" data-k="d" aria-label="Right">▶</button></div>
+      <div class="row"><button class="btn" id="bGhost" aria-pressed="false">Through walls (G)</button><button class="btn" id="bWalkExit">Stop walking (Esc)</button></div>
+    </div>
   </div>
   <aside class="panel">
     <div>
@@ -103,7 +120,36 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
         <button class="btn" data-v="east">East side</button>
         <button class="btn" data-v="west">West side</button>
         <button class="btn" data-v="rear">Rear</button>
+        <button class="btn" data-v="fromBal">From the balcony</button>
+        <button class="btn" data-v="toBal">Balcony from across the road</button>
       </div>
+    </section>
+    <section>
+      <h2>Walk and tour</h2>
+      <div class="row">
+        <button class="btn" id="bTour" aria-pressed="false">▶ Tour (50 s)</button>
+        <button class="btn" id="bWalk" aria-pressed="false">Walk</button>
+        <select id="sWalkAt" aria-label="Start walking from"><option value="street">from the street</option><option value="deck">from the deck</option><option value="kitchen">from the living room</option><option value="bed1">from Bed 1</option><option value="balcony">from the balcony</option></select>
+      </div>
+      <p class="fine" style="margin-top:8px">Walk: W A S D or the arrow keys to move, drag to look, Shift to go faster, G to pass through walls, Esc to stop. On a phone, use the arrows on screen.</p>
+    </section>
+    <section class="opts">
+      <h2>Light and sun</h2>
+      <div class="seg" id="lightSeg" style="grid-template-columns:1fr 1fr 1fr"><button data-l="day" aria-pressed="true">Day</button><button data-l="evening" aria-pressed="false">Evening</button><button data-l="sun" aria-pressed="false">Sun study</button></div>
+      <div id="sunCtl" class="opts" hidden>
+        <label class="tog" for="sMonth" style="cursor:default">21st of
+          <select id="sMonth"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6" selected>June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></label>
+        <label class="tog" for="rTime" style="cursor:default">Time <input type="range" id="rTime" min="300" max="1230" step="15" value="720" style="flex:1;accent-color:var(--accent)"></label>
+        <p class="fine" id="sunOut" aria-live="polite"></p>
+        <div class="row" id="june"><span style="font-size:13px;align-self:center">Winter shadows, 21 June:</span><button class="btn" data-t="540">9 am</button><button class="btn" data-t="720">12 pm</button><button class="btn" data-t="900">3 pm</button></div>
+        <p class="fine">Real Sydney sun path at Earlwood (33.9° S). The model's north is within a few degrees of true north, taken from the lot boundary. Councils usually ask for 9 am, 12 pm and 3 pm on 21 June when a DA adds height.</p>
+      </div>
+    </section>
+    <section class="opts">
+      <h2>Section cut</h2>
+      <label class="tog" for="sSec" style="cursor:default">Slice
+        <select id="sSec"><option value="off">Off</option><option value="x">Side to side, through the stair (look west)</option><option value="z">Front to back, through the stair (look south)</option></select></label>
+      <div id="secRow" hidden><input type="range" id="rSec" aria-label="Where the cut is" style="width:100%;accent-color:var(--accent)"><p class="fine" id="secOut"></p></div>
     </section>
     <section class="opts">
       <h2>Show</h2>
@@ -171,7 +217,7 @@ const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.495; controls.minDistance = 4; controls.maxDistance = 170;
 
 // Coordinates (metres): X = east(0) to west, Z = rear(0) to street (north, +Z), Y up. Studio floor = 0.
-const S = { plan: '', state: 'after', xray: false, labels: true, screens: false, floor: "carpet", paint: 4 };
+const S = { plan: '', state: 'after', xray: false, labels: true, screens: false, floor: "carpet", paint: 4, light: "day", sec: "off" };
 let common = new THREE.Group(), before = new THREE.Group(), after = new THREE.Group();
 scene.add(common, before, after);
 // everything in front of the house is built in its own frame, shifted north to meet the true front wall
@@ -462,7 +508,7 @@ function ground0(x, z) {
     col.push(...c);
   }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })); m.receiveShadow = true; common.add(m);
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 })); m.receiveShadow = true; m.userData.terrain = true; common.add(m);
 }
 // street furniture: kerb, power pole, overhead wires (they cross the front in every photo)
 box(-18, 28, -5.5, -5.38, 18.85, 19.05, mats.path);
@@ -1264,6 +1310,8 @@ const VIEWS = {
   east: { p: [-21, 6, 10], t: [4, 3.5, 3] },
   west: { p: [28, 8, 12], t: [6, 3, 3] },
   rear: { p: [4, 20, -38], t: [5, 4.5, -8] },
+  fromBal: { p: [4.2, 7.65, 8.5], t: [4.6, 5.6, 30] },
+  toBal: { p: [6, -2.2, 45], t: [5.5, -2.6, 8] },
 };
 const list = document.getElementById('changes');
 for (const c of CHANGES) {
@@ -1410,12 +1458,22 @@ const PLAN = { U: { cut: LV_U[0] + 1.45, floor: LV_U[0], c: [5.9, 2.0], span: 18
   L: { cut: LV_L[0] + 1.45, floor: LV_L[0], c: [5.6, 5.4], span: 17 }, S: { cut: null, floor: 0, c: [5, -9], span: 66 } };
 const grid = new THREE.GridHelper(60, 60, 0x000000, 0x000000); grid.material.transparent = true; grid.material.opacity = .14; grid.visible = false; scene.add(grid);
 const hidden = [], sided = new Set();
+// hide the solid outer shell blocks so the real walls show (inside views), and optionally make cut solids read as filled
+function shellOff(hide, dbl) {
+  for (const o of hidden) o.visible = true; hidden.length = 0;
+  for (const m of sided) { m.side = m.userData.side0; m.needsUpdate = true; } sided.clear();
+  if (!hide && !dbl) return;
+  const bb = new THREE.Box3(), sz = new THREE.Vector3();
+  scene.traverse(o => { if (!o.isMesh) return;
+    if (hide && o.userData.skin) { bb.setFromObject(o).getSize(sz); if (sz.y > 2 && sz.x * sz.z > 5) { if (o.visible) { o.visible = false; hidden.push(o); } return; } }
+    if (dbl) for (const m of [].concat(o.material || [])) if (m.side !== THREE.DoubleSide && !sided.has(m)) { m.userData.side0 = m.side; m.side = THREE.DoubleSide; m.needsUpdate = true; sided.add(m); } });
+}
 function setPlan(k) {
+  if (k && typeof exitAll === 'function') exitAll('plan');
   const P = PLAN[k]; S.plan = P ? k : '';
   document.querySelectorAll('#plans button').forEach(b => b.setAttribute('aria-pressed', b.dataset.pl === S.plan));
   $('planNote').hidden = !P || !P.cut;
-  for (const o of hidden) o.visible = true; hidden.length = 0;
-  for (const m of sided) { m.side = m.userData.side0; m.needsUpdate = true; } sided.clear();
+  shellOff(false, false);
   mats.inner.color.setHex(0xdedbd2); sun.castShadow = true; renderer.clippingPlanes = []; grid.visible = false;
   if (!P) { cam = camera; controls.object = camera; controls.enableRotate = true; controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE; controls.touches.ONE = THREE.TOUCH.ROTATE;
     camera.position.set(...VIEWS.aerial.p); controls.target.set(...VIEWS.aerial.t); return; }
@@ -1423,10 +1481,7 @@ function setPlan(k) {
   if (P.cut) {
     renderer.clippingPlanes = [new THREE.Plane(V(0, -1, 0), P.cut)]; sun.castShadow = false; mats.inner.color.setHex(0x34383b);
     grid.visible = true; grid.position.set(5, P.floor + .035, 3);
-    const bb = new THREE.Box3(), sz = new THREE.Vector3();
-    scene.traverse(o => { if (!o.isMesh) return;
-      if (o.userData.skin) { bb.setFromObject(o).getSize(sz); if (sz.y > 2 && sz.x * sz.z > 5) { if (o.visible) { o.visible = false; hidden.push(o); } return; } }   // solid shell blocks: the real walls show instead
-      for (const m of [].concat(o.material || [])) if (m.side !== THREE.DoubleSide && !sided.has(m)) { m.userData.side0 = m.side; m.side = THREE.DoubleSide; m.needsUpdate = true; sided.add(m); } });   // cut solids read as filled
+    shellOff(true, true);
   }
   controls.target.set(P.c[0], 0, P.c[1]); ocam.position.set(P.c[0], 120, P.c[1]); ocam.zoom = 1; ocam.userData.span = P.span; resize();
 }
@@ -1445,11 +1500,212 @@ setState('after');
 
 // ---------- theme-aware sky ----------
 function sky() {
-  const c = getComputedStyle(document.documentElement).getPropertyValue('--sky').trim() || '#dfe8ec';
+  const c = S.light === 'evening' ? '#1c2434' : (getComputedStyle(document.documentElement).getPropertyValue('--sky').trim() || '#dfe8ec');
   scene.background = new THREE.Color(c); scene.fog = new THREE.Fog(c, 110, 260);
 }
 sky(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sky);
 new MutationObserver(sky).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+// ---------- mode switching ----------
+function exitAll(except) {
+  if (except !== 'walk' && WALK.on) walkOff();
+  if (except !== 'tour' && TOUR.on) tourOff();
+  if (except !== 'plan' && S.plan) setPlan('');
+  if (except !== 'sec' && S.sec !== 'off') setSection('off');
+}
+const DOWN = V(0, -1, 0), rc = new THREE.Raycaster();
+const visW = o => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+let colliders = [];
+function collect() { colliders = []; scene.traverse(o => { if (o.isMesh && !o.userData.terrain && !o.userData.isDepthPre && o.material) colliders.push(o); }); }
+function solid(h) {
+  const m = h.object.material, mm = Array.isArray(m) ? m[h.face ? h.face.materialIndex : 0] : m;
+  if (!mm || mm.visible === false || mm.colorWrite === false || (mm.transparent && mm.opacity < .3)) return false;
+  return visW(h.object);
+}
+
+// ---------- walk mode: eye level, walls you can't walk through ----------
+const WALK = { on: false, yaw: 0, pitch: 0, feet: 0, eye: 0, vy: 0, pos: V(0, 0, 0), keys: new Set(), ghost: false };
+const EYE = 1.62, RAD = .28, STEP = .42;
+const STARTS = {
+  street: { x: 3.25, y: -5.5, z: 19.6, yaw: 0, name: 'the street' },
+  deck: { x: 6.2, y: .1, z: 10.6, yaw: .75, name: 'the deck' },
+  kitchen: { x: 4.6, y: 2.95, z: 4.2, yaw: Math.PI / 2, name: 'the living room' },
+  bed1: { x: 8.4, y: 5.86, z: 3.0, yaw: Math.PI, name: 'Bed 1' },
+  balcony: { x: 5.5, y: 6.1, z: 7.6, yaw: Math.PI, name: 'the balcony' },
+};
+function floorAt(x, z, top) {
+  rc.set(V(x, top, z), DOWN); rc.near = 0; rc.far = 80;
+  let y = ground(x, z);
+  for (const h of rc.intersectObjects(colliders, false)) if (solid(h)) { y = Math.max(y, h.point.y); break; }
+  return y;
+}
+function blocked(x, z, dx, dz) {
+  const L = Math.hypot(dx, dz); if (!L) return false; const d = V(dx / L, 0, dz / L);
+  for (const hy of [.55, 1.45]) { rc.set(V(x, WALK.feet + hy, z), d); rc.near = 0; rc.far = L + RAD;
+    for (const h of rc.intersectObjects(colliders, false)) if (solid(h)) return true; }
+  return false;
+}
+function walkOn(k) {
+  exitAll('walk'); setXray(false); flight = null;
+  const s = STARTS[k || $('sWalkAt').value];
+  WALK.on = true; controls.enabled = false; shellOff(true, false); collect();
+  WALK.pos.set(s.x, 0, s.z); WALK.feet = floorAt(s.x, s.z, s.y + 1.2); WALK.eye = WALK.feet + EYE; WALK.yaw = s.yaw; WALK.pitch = -.05; WALK.vy = 0;
+  camera.fov = 70; camera.updateProjectionMatrix(); camera.rotation.order = 'YXZ';
+  $('walkHud').hidden = false; $('bWalk').setAttribute('aria-pressed', true); $('bWalk').textContent = 'Stop walking'; setGhost(false);
+}
+function walkOff() {
+  WALK.on = false; WALK.keys.clear(); controls.enabled = true; shellOff(false, false);
+  const dir = new THREE.Vector3(); camera.getWorldDirection(dir);
+  camera.rotation.order = 'XYZ'; camera.fov = 42; camera.updateProjectionMatrix();
+  controls.target.copy(camera.position).addScaledVector(dir, 4.5);
+  $('walkHud').hidden = true; $('bWalk').setAttribute('aria-pressed', false); $('bWalk').textContent = 'Walk';
+}
+function setGhost(on) { WALK.ghost = on; $('bGhost').setAttribute('aria-pressed', on); }
+function walkStep(dt) {
+  const k = WALK.keys, has = (...a) => a.some(x => k.has(x));
+  const f = (has('w', 'ArrowUp') ? 1 : 0) - (has('s', 'ArrowDown') ? 1 : 0), st = (has('d', 'ArrowRight') ? 1 : 0) - (has('a', 'ArrowLeft') ? 1 : 0);
+  const p = WALK.pos;
+  if (f || st) {
+    const sp = (has('Shift') ? 3.4 : 1.5) * dt, fx = -Math.sin(WALK.yaw), fz = -Math.cos(WALK.yaw);
+    let dx = fx * f - fz * st, dz = fz * f + fx * st; const n = Math.hypot(dx, dz); dx *= sp / n; dz *= sp / n;
+    if (WALK.ghost || !blocked(p.x, p.z, dx, 0)) p.x += dx;
+    if (WALK.ghost || !blocked(p.x, p.z, 0, dz)) p.z += dz;
+  }
+  const tgt = floorAt(p.x, p.z, WALK.feet + STEP);
+  if (tgt >= WALK.feet) { WALK.feet = tgt; WALK.vy = 0; }
+  else { WALK.vy -= 9.8 * dt; WALK.feet = Math.max(tgt, WALK.feet + WALK.vy * dt); if (WALK.feet === tgt) WALK.vy = 0; }
+  WALK.eye += (WALK.feet + EYE - WALK.eye) * Math.min(1, dt * 10);
+  camera.position.set(p.x, WALK.eye, p.z); camera.rotation.set(WALK.pitch, WALK.yaw, 0, 'YXZ');
+}
+{ let last = null;
+  canvas.addEventListener('pointerdown', e => { if (!WALK.on) return; last = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => { if (!WALK.on || !last) return;
+    WALK.yaw -= (e.clientX - last[0]) * .0045; WALK.pitch = Math.max(-1.4, Math.min(1.4, WALK.pitch - (e.clientY - last[1]) * .0045)); last = [e.clientX, e.clientY]; });
+  const up = () => { last = null; }; canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  const norm = e => e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape') { if (WALK.on) walkOff(); if (TOUR.on) tourOff(); return; }
+    if (!WALK.on || /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement && document.activeElement.tagName)) return;
+    const k = norm(e); if (k === 'g') { setGhost(!WALK.ghost); return; }
+    if (/^(Arrow|Shift$|[wasd]$)/.test(k)) { WALK.keys.add(k); e.preventDefault(); } });
+  addEventListener('keyup', e => WALK.keys.delete(norm(e)));
+  addEventListener('blur', () => WALK.keys.clear());
+  document.querySelectorAll('#walkHud [data-k]').forEach(b => {
+    const on = e => { e.preventDefault(); WALK.keys.add(b.dataset.k); }, off = () => WALK.keys.delete(b.dataset.k);
+    b.addEventListener('pointerdown', on); for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, off); });
+}
+$('bWalk').onclick = () => WALK.on ? walkOff() : walkOn();
+$('sWalkAt').onchange = () => { if (WALK.on) walkOn(); };
+$('bGhost').onclick = () => setGhost(!WALK.ghost);
+$('bWalkExit').onclick = () => walkOff();
+
+// ---------- guided tour: a sequence of slow camera moves with captions ----------
+const SHOTS = [
+  { a: [[5.5, -3.2, 34], [5.5, 0, 8]], b: [[5.5, -3.6, 27], [5.5, .6, 8]], cap: 'Homer St · the house from across the road' },
+  { a: [[1.4, -3.9, 22.5], [3.4, -2.2, 15]], b: [[3.3, -2.8, 19.2], [5.5, -.8, 13.5]], cap: 'Front stairs · new treads, black metal balustrades, sandstone walls' },
+  { a: [[8.6, 1.8, 10.7], [1.5, 1.6, 8.9]], b: [[7.4, 1.8, 10.6], [1.2, 1.8, 8.6]], cap: 'Deck · new boards and a black bar balustrade, same place and height' },
+  { a: [[-5, 4.2, 17.5], [1.4, 3, 8]], b: [[-3, 4.6, 16], [1.6, 3.2, 8]], cap: 'Extension · two levels, rounded glass corner, charcoal frames' },
+  { a: [[3.5, 1.7, 11.2], [1.45, 1.6, 7.7]], b: [[2.6, 1.7, 10.6], [1.45, 1.9, 7.7]], cap: 'Helical stair · white steel, oak treads, studio up to the kitchen' },
+  { a: [[4.7, 4.55, 2.8], [.6, 3.6, 4.9]], b: [[4.5, 4.55, 3.1], [.6, 3.6, 5.7]], cap: 'Kitchen · deep green shaker and island, open to the extension', in: 1 },
+  { a: [[3.4, 4.6, 5.2], [9, 3.7, 8]], b: [[4.2, 4.6, 4.6], [9, 3.7, 6]], cap: 'Living and dining · table in the glass, piano in the north-west corner', in: 1 },
+  { a: [[9.2, 7.4, 1.4], [7.6, 6.6, 9]], b: [[8.8, 7.4, 2.6], [7, 6.6, 9]], cap: 'Bed 1 · window becomes doors out to the balcony', in: 1 },
+  { a: [[9.2, 7.7, 8.9], [2.5, 6.5, 7.6]], b: [[8.4, 7.7, 9.0], [2.5, 6.6, 7.2]], cap: 'Roof balcony · about 25 m², opening off all three bedrooms' },
+  { a: [[-12, 16, 26], [5, 3, 4]], b: [[-17, 22, 31], [5, 2, 2]], cap: 'After' },
+];
+const TOUR = { on: false, i: 0, s: 0, D: 5200 };
+const fade = $('fade'), capEl = $('cap'), capTxt = $('capTxt');
+function tourOn() {
+  exitAll('tour'); setState('after'); setXray(false); flight = null;
+  TOUR.on = true; TOUR.i = 0; TOUR.s = performance.now(); TOUR.inside = false; controls.enabled = false;
+  camera.fov = 55; camera.updateProjectionMatrix(); capEl.hidden = false; $('bTour').setAttribute('aria-pressed', true); $('bTour').textContent = '■ Stop tour';
+}
+function tourOff() {
+  TOUR.on = false; controls.enabled = true; shellOff(false, false); fade.style.opacity = 0; capEl.hidden = true;
+  const sh = SHOTS[Math.min(TOUR.i, SHOTS.length - 1)];
+  camera.fov = 42; camera.updateProjectionMatrix(); controls.target.set(...sh.b[1]);
+  if (camera.position.distanceTo(controls.target) < 4.2) camera.position.copy(controls.target).add(V(0, 2, 4.5));
+  $('bTour').setAttribute('aria-pressed', false); $('bTour').textContent = '▶ Tour (50 s)';
+}
+const _t = new THREE.Vector3();
+function tourStep(now) {
+  let k = (now - TOUR.s) / TOUR.D;
+  if (k >= 1) { TOUR.i++; TOUR.s = now; k = 0; if (TOUR.i >= SHOTS.length) { tourOff(); return; } }
+  const sh = SHOTS[TOUR.i], e = reduce ? 0 : k * k * (3 - 2 * k);
+  if (!!sh.in !== TOUR.inside) { TOUR.inside = !!sh.in; shellOff(TOUR.inside, false); }
+  camera.position.lerpVectors(V(...sh.a[0]), V(...sh.b[0]), e); _t.lerpVectors(V(...sh.a[1]), V(...sh.b[1]), e); camera.lookAt(_t);
+  const last = TOUR.i === SHOTS.length - 1, fo = Math.min(1, k / .09, last ? 1 : (1 - k) / .09);
+  fade.style.opacity = TOUR.i === 0 && k < .09 ? 1 - k / .09 : 1 - fo;
+  if (fade.style.opacity > .99 || k < .02) capTxt.textContent = sh.cap;
+  $('capN').textContent = `${TOUR.i + 1}/${SHOTS.length}`;
+}
+$('bTour').onclick = () => TOUR.on ? tourOff() : tourOn();
+$('bCapStop').onclick = () => tourOff();
+
+// ---------- light: day, evening, sun study ----------
+const hemi = scene.children.find(o => o.isHemisphereLight);
+const SUN0 = { p: sun.position.clone(), c: sun.color.getHex(), i: sun.intensity }, HEMI0 = { i: hemi.intensity, c: hemi.color.getHex(), g: hemi.groundColor.getHex() };
+const GL0 = { e: mats.glass.emissive.getHex(), ei: mats.glass.emissiveIntensity };
+const lamps = new THREE.Group(); lamps.visible = false; scene.add(lamps);
+for (const [x, y, z, i] of [[1.6, LV_M[0] + 2.3, 3.4, 9], [5.2, LV_M[0] + 2.3, 4.6, 9], [7.8, LV_M[0] + 2.3, 7.4, 9], [1.4, LV_M[0] + 2.2, 8.2, 7], [1.4, LV_L[0] + 2.2, 8.4, 6],
+  [6.2, LV_L[0] + 2.2, 7.4, 6], [3, LV_L[0] + 2.2, 4.6, 5], [8.6, LV_U[0] + 2.1, 4.2, 6], [5, LV_U[0] + 2.1, 4.6, 5], [1.8, LV_U[0] + 2.1, 4.6, 5]]) {
+  const l = new THREE.PointLight(0xffc387, i, 10, 1.6); l.position.set(x, y, z); lamps.add(l); }
+const LAT = -33.924 * Math.PI / 180, LON = 151.141, NORTH_OFF = 2 * Math.PI / 180;   // model +Z points about 2 degrees east of true north (NSW cadastre, Lot A DP389934)
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+function sunAt(month, mins) {   // 21st of the month, Sydney clock time in minutes
+  const n = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334][month - 1] + 21, dst = month >= 10 || month <= 3;
+  const decl = 23.44 * Math.PI / 180 * Math.sin(2 * Math.PI * (284 + n) / 365), B = 2 * Math.PI * (n - 81) / 365;
+  const eot = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+  const solar = mins - (dst ? 60 : 0) + 4 * (LON - 150) + eot, H = (solar / 60 - 12) * 15 * Math.PI / 180;
+  const alt = Math.asin(Math.sin(LAT) * Math.sin(decl) + Math.cos(LAT) * Math.cos(decl) * Math.cos(H));
+  const az = (Math.atan2(Math.sin(H), Math.cos(H) * Math.sin(LAT) - Math.tan(decl) * Math.cos(LAT)) + 3 * Math.PI) % (2 * Math.PI);
+  return { alt, az, dst };
+}
+function placeSun(alt, az) { const r = az - NORTH_OFF, c = Math.cos(alt);
+  sun.position.copy(sun.target.position).add(V(-Math.sin(r) * c, Math.sin(alt), Math.cos(r) * c).multiplyScalar(48)); }
+const DIRS = ['north', 'north-north-east', 'north-east', 'east-north-east', 'east', 'east-south-east', 'south-east', 'south-south-east', 'south', 'south-south-west', 'south-west', 'west-south-west', 'west', 'west-north-west', 'north-west', 'north-north-west'];
+const clock = m => { const h = Math.floor(m / 60), mm = m % 60; return `${(h + 11) % 12 + 1}:${String(mm).padStart(2, '0')} ${h < 12 ? 'am' : 'pm'}`; };
+function applySun() {
+  const mo = +$('sMonth').value, mins = +$('rTime').value, s = sunAt(mo, mins), up = s.alt > 0;
+  placeSun(s.alt, s.az); const f = up ? Math.min(1, Math.sin(s.alt) * 3) : 0;
+  sun.intensity = 2.3 * f; sun.color.setHex(s.alt < .2 ? 0xffd2a0 : SUN0.c); hemi.intensity = .25 + .65 * Math.min(1, Math.max(0, Math.sin(s.alt) * 3 + .3));
+  $('sunOut').textContent = `21 ${MONTHS[mo - 1]}, ${clock(mins)} ${s.dst ? 'AEDT' : 'AEST'} · ` +
+    (up ? `sun ${Math.round(s.alt * 180 / Math.PI)}° up, in the ${DIRS[Math.round(s.az / (Math.PI / 8)) % 16]}` : 'sun is down');
+}
+function setLight(k) {
+  S.light = k; document.querySelectorAll('#lightSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === k));
+  $('sunCtl').hidden = k !== 'sun'; const eve = k === 'evening';
+  lamps.visible = eve;
+  mats.glass.emissive.setHex(eve ? 0xffb15e : GL0.e); mats.glass.emissiveIntensity = eve ? .75 : GL0.ei;
+  hemi.color.setHex(eve ? 0x5d6b92 : HEMI0.c); hemi.groundColor.setHex(eve ? 0x1d1a22 : HEMI0.g);
+  if (k === 'day') { sun.position.copy(SUN0.p); sun.color.setHex(SUN0.c); sun.intensity = SUN0.i; hemi.intensity = HEMI0.i; }
+  if (eve) { placeSun(3.5 * Math.PI / 180, 292 * Math.PI / 180); sun.color.setHex(0xff8a4c); sun.intensity = .55; hemi.intensity = .32; }
+  if (k === 'sun') applySun();
+  sky();
+}
+document.querySelectorAll('#lightSeg button').forEach(b => b.onclick = () => setLight(b.dataset.l));
+$('sMonth').onchange = applySun; $('rTime').oninput = applySun;
+document.querySelectorAll('#june button').forEach(b => b.onclick = () => {
+  setLight('sun'); $('sMonth').value = 6; $('rTime').value = +b.dataset.t; applySun();
+  document.querySelectorAll('#june button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  fly({ p: [5.5, 52, 20], t: [5.5, 0, 0] });
+});
+
+// ---------- section cut ----------
+const SEC = { x: { min: -1.5, max: 12.5, def: 1.45, axis: 'X' }, z: { min: -1, max: 11, def: 7.7, axis: 'Z' } };
+function secPlane() { const c = +$('rSec').value;
+  renderer.clippingPlanes = [S.sec === 'x' ? new THREE.Plane(V(1, 0, 0), -c) : new THREE.Plane(V(0, 0, -1), c)];
+  $('secOut').textContent = S.sec === 'x' ? `Cut ${(c).toFixed(2)} m west of the east wall, looking west` : `Cut ${(c).toFixed(2)} m in front of the back wall, looking south`; }
+function setSection(k) {
+  if (k !== 'off') exitAll('sec');
+  S.sec = k; $('sSec').value = k; $('secRow').hidden = k === 'off';
+  if (k === 'off') { renderer.clippingPlanes = []; shellOff(false, false); return; }
+  const d = SEC[k], r = $('rSec'); r.min = d.min; r.max = d.max; r.step = .05; r.value = d.def;
+  shellOff(true, true); secPlane();
+  fly(k === 'x' ? { p: [d.def - 17, 4.6, 4.6], t: [d.def + 2, 4, 4.6] } : { p: [5.5, 5.2, d.def + 21], t: [5.5, 4, d.def - 2] });
+}
+$('sSec').onchange = e => setSection(e.target.value);
+$('rSec').oninput = secPlane;
+document.querySelectorAll('#plans button').forEach(b => b.addEventListener('click', () => { if (b.dataset.pl) { if (WALK.on) walkOff(); if (TOUR.on) tourOff(); } }));
 
 // ---------- loop ----------
 const needle = $('needle'), tmp = new THREE.Vector3();
@@ -1461,12 +1717,14 @@ function resize() {
 }
 new ResizeObserver(resize).observe(canvas.parentElement); resize();
 function tick(now) {
+  const dt = Math.min(.05, (now - (tick.last || now)) / 1000); tick.last = now;
+  if (WALK.on) walkStep(dt); else if (TOUR.on) tourStep(now); else {
   if (flight) {
     let k = Math.min(1, (now - flight.s) / 1100); const e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     camera.position.lerpVectors(flight.p0, flight.p1, e); controls.target.lerpVectors(flight.t0, flight.t1, e);
     if (k >= 1) flight = null;
   }
-  controls.update();
+  controls.update(); }
   if (!depthReset.parent) scene.add(depthReset);
   addShellDepth(scene);
   renderer.render(scene, cam);
@@ -1474,7 +1732,7 @@ function tick(now) {
   for (const L of labels) {
     const P = PLAN[S.plan], show = S.labels && (P ? L.kind === 'room' && (P.cut ? Math.abs(L.pos.y - P.floor - .35) < .6 : L.pos.y > 9) : (L.kind === 'room' ? S.xray : S.state === 'after'));
     tmp.copy(L.pos).project(cam);
-    const vis = show && (!L.grp || (L.grp.visible && furn.visible)) && tmp.z < 1 && Math.abs(tmp.x) < 1.05 && Math.abs(tmp.y) < 1.05;
+    const vis = show && !WALK.on && !TOUR.on && (!L.grp || (L.grp.visible && furn.visible)) && tmp.z < 1 && Math.abs(tmp.x) < 1.05 && Math.abs(tmp.y) < 1.05;
     L.el.style.display = vis ? '' : 'none';
     if (vis) L.el.style.transform = `translate(${(tmp.x * .5 + .5) * w}px,${(-tmp.y * .5 + .5) * h}px) translate(-50%,-50%)`;
   }
