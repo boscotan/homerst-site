@@ -119,16 +119,10 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
       <button id="bAfter" aria-pressed="true">After</button>
     </div>
     <section>
-      <h2>Inspired designs</h2>
+      <h2>Design visions</h2>
       <div class="row" id="desRow"></div>
       <p class="fine" id="desNote" hidden></p>
-      <p class="fine">Default is your own design. Each inspired one is built on its frame: same footprint, floor levels, extension and roof terrace.</p>
-    </section>
-    <section>
-      <h2>Extension options</h2>
-      <div class="row" id="extRow"></div>
-      <p class="fine" id="extNote" hidden></p>
-      <p class="fine">How each architect would do the extension. Works with any facade above. Nothing projects north of the glazed front except eaves that let winter sun in.</p>
+      <p class="fine">Yours is your After. Each architect's vision starts from the original house, removes as little as possible, then builds on, extends and clads it, as one complete design.</p>
     </section>
     <section>
       <h2>Floor plans (overhead)</h2>
@@ -1740,14 +1734,16 @@ $('sSec').onchange = e => setSection(e.target.value);
 $('rSec').oninput = secPlane;
 document.querySelectorAll('#plans button').forEach(b => b.addEventListener('click', () => { if (b.dataset.pl) { if (WALK.on) walkOff(); if (TOUR.on) tourOff(); } }));
 
-// ---------- architect-inspired designs, built on the After frame ----------
-// Each design keeps the After's footprint, floor levels (0, 2.9, 5.8), extension outline and roof-terrace position,
-// and changes the outside: skin, slab edges, parapets, roof, screens, canopies. Shown on top of the After state.
+// ---------- design visions: each starts from the ORIGINAL structure (Before), removes as little as possible, then builds on / extends / clads ----------
+// Assembled by ai/des/build.py from ai/des/_core.js + one file per architect + ai/des/_ui.js. Edit those files, not this block.
 const DES_GRP = new THREE.Group(); scene.add(DES_GRP);
 const DES = {};
 const desMat = {
-  hadid: M({ color: 0xf4f3f0, roughness: .25 }),
+  white: M({ color: 0xf5f4f1, roughness: .25 }),
+  render: M({ color: 0xece7dc, roughness: .85 }),
   steel: M({ color: 0xd9dcde, roughness: .32, metalness: .35, side: THREE.DoubleSide }),
+  zinc: M({ color: 0xc4c9cb, roughness: .4, metalness: .3, side: THREE.DoubleSide }),
+  corr: M({ map: canvasTex(128, 128, (g, w, h) => { for (let x = 0; x < w; x++) { const v = 150 + 55 * Math.sin(x / w * Math.PI * 16); g.fillStyle = `rgb(${v | 0},${v + 3 | 0},${v + 6 | 0})`; g.fillRect(x, 0, 1, h); } }, 1), roughness: .4, metalness: .35 }),
   conc: M({ map: canvasTex(256, 256, (g, w, h) => {
     g.fillStyle = '#a9a8a2'; g.fillRect(0, 0, w, h);
     for (let i = 0; i < 2600; i++) { const v = 150 + rnd() * 40 | 0; g.fillStyle = `rgba(${v},${v},${v - 4},.25)`; g.fillRect(rnd() * w, rnd() * h, 2, 2); }
@@ -1757,285 +1753,796 @@ const desMat = {
     g.fillStyle = 'rgba(60,60,58,.6)'; for (let x = 32; x < w; x += 64) for (let y = 16; y < h; y += 32) { g.beginPath(); g.arc(x, y, 2.4, 0, 7); g.fill(); }
   }, 1), roughness: .9 }),
   pale: M({ color: 0xe8e2d4, roughness: .8 }),
-  white: M({ color: 0xf6f5f1, roughness: .7 }),
   timber: M({ color: 0xb98a5a, roughness: .75 }),
+  ply: M({ color: 0xc9a77a, roughness: .8 }),
   bronze: M({ color: 0x4a3a2c, roughness: .45, metalness: .5 }),
   alu: M({ color: 0xb8bcbd, roughness: .4, metalness: .6 }),
-  zinc: M({ color: 0xc4c9cb, roughness: .4, metalness: .3, side: THREE.DoubleSide }),
+  sandstone: M({ color: 0xc9ad80, roughness: .95 }),
   glassRail: M({ color: 0xbfd6dc, roughness: .05, transparent: true, opacity: .32, depthWrite: false }),
   pv: M({ color: 0x1b2433, roughness: .25, metalness: .4 }),
-  sandstone: M({ color: 0xc9ad80, roughness: .95 }),
+  chain: M({ map: canvasTex(64, 64, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(170,175,178,1)'; g.lineWidth = 2; for (let i = -w; i < w * 2; i += 10) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + h, h); g.stroke(); g.beginPath(); g.moveTo(i + h, 0); g.lineTo(i, h); g.stroke(); } }, 6), transparent: true, alphaTest: .3, side: THREE.DoubleSide }),
 };
-desMat.conc.map.repeat.set(.35, .35);
-// plan outline of the front volume (extension + projection), pushed out by o, with a corner radius r at the east-front corner
-function frontOutline(o, r, back = BD) {
-  const pts = [[BW + o, back], [BW + o, PF + o]];
-  for (let i = 0; i <= 14; i++) { const t = Math.PI / 2 + (i / 14) * Math.PI / 2; pts.push([EXr + Math.cos(t) * (EXr + o), PF - EXr + Math.sin(t) * (EXr + o)]); }
-  pts.push([-o, back]);
-  return pts;
-}
-// a horizontal slab following the front outline: from the wall line (back) out to o, thickness th, top at y
-function frontSlab(y, th, o, mat, par, back = BD, rShift = 0) {
-  const P = frontOutline(o, EXr, back); const sh = new THREE.Shape();
-  P.forEach(([x, z], i) => i ? sh.lineTo(x, -z) : sh.moveTo(x, -z));
-  const g = new THREE.ExtrudeGeometry(sh, { depth: th, bevelEnabled: false, curveSegments: 24 }); g.rotateX(-Math.PI / 2);
-  const m = new THREE.Mesh(g, mat); m.position.y = y - th; m.castShadow = m.receiveShadow = true; par.add(m); return m;
-}
-// a thin upstand (parapet or balustrade) along the outline at offset o, from y to y+h
-function frontUpstand(y, h, o, th, mat, par) {
-  const P = frontOutline(o, EXr).slice(0, -1).concat([[-o, BD]]);
-  for (let i = 0; i < P.length - 1; i++) {
-    const [x0, z0] = P[i], [x1, z1] = P[i + 1], L = Math.hypot(x1 - x0, z1 - z0); if (L < .01) continue;
-    const s = new THREE.Mesh(new THREE.BoxGeometry(L + .01, h, th), mat); s.position.set((x0 + x1) / 2, y + h / 2, (z0 + z1) / 2);
-    s.rotation.y = Math.atan2(-(z1 - z0), x1 - x0); s.castShadow = mat !== desMat.glassRail; par.add(s);
-  }
-}
-const flatRoof = (y, th, o, mat, par) => box(-0.35 - o, BW + .4 + o, y, y + th, -0.35 - o * .4, BD + .35 + o, mat, par);
-// house roof meshes (hidden by designs that use a flat or floating roof)
-const houseRoof = []; common.traverse(o => { if (o.isMesh && o.material === mats.roof) { const bb = new THREE.Box3().setFromObject(o); if (bb.min.y > 8 && bb.max.x < 13.5 && bb.min.z > -1.5) houseRoof.push(o); } });
+desMat.conc.map.repeat.set(.35, .35); desMat.chain.map.repeat.set(6, 6);
+// a second recolourable shell skin (for the white projection walls and fibro), with the see-through-window stencil like the other shell materials
+const skin2 = M({ map: renderTex, color: 0xf0efe9 });
+Object.assign(skin2, { stencilWrite: true, stencilRef: 1, stencilFunc: THREE.NotEqualStencilFunc, stencilFail: THREE.KeepStencilOp, stencilZFail: THREE.KeepStencilOp, stencilZPass: THREE.KeepStencilOp });
+shellSet.add(skin2);
 
-function design(key, name, cfg, build) { const g = new THREE.Group(); g.visible = false; DES_GRP.add(g); build(g); DES[key] = { name, g, ...cfg }; }
-
-design('hadid', 'Zaha Hadid', { skin: 'render', render: 0xf4f3f0, rough: .3, frames: 0x1d2124, roof: false, bal: false,
-  note: 'White, fluid and continuous. Two sweeping slab bands wrap the rounded corner and run out over the slope; a curved white shell rises from the terrace edge into the roof. All skin and slab-edge work on the existing walls, but the 1.4 m curved cantilevers and the shell roof are the most structure of any option.' }, g => {
-  frontSlab(2.95, .38, 1.0, desMat.hadid, g);
-  frontSlab(6.0, .5, 1.45, desMat.hadid, g);
-  frontUpstand(6.0, .95, 1.35, .22, desMat.hadid, g);
-  // curved shell: rises from the terrace edge over the bedrooms (clears the 8.3 m upper ceiling) and caps the house
-  const C = [], z0 = PF + 1.45, z1 = -0.35;
-  for (let i = 0; i <= 28; i++) { const z = z0 + (z1 - z0) * i / 28; let y;
-    if (z > BD) { const u = (z0 - z) / (z0 - BD); y = 7.2 + 1.35 * (1 - Math.cos(u * Math.PI)) / 2; } else y = 8.55 + .2 * (BD - z) / (BD - z1);
-    C.push([z, y]); }
-  const sec = new THREE.Shape(); C.forEach(([z, y], i) => i ? sec.lineTo(z, y) : sec.moveTo(z, y)); for (let i = C.length - 1; i >= 0; i--) sec.lineTo(C[i][0], C[i][1] + .24);
-  const D = BW + 1.3, sg = new THREE.ExtrudeGeometry(sec, { depth: D, bevelEnabled: false }); sg.rotateY(-Math.PI / 2);
-  const shell = new THREE.Mesh(sg, desMat.hadid); shell.position.set(-0.75 + D, 0, 0); shell.castShadow = shell.receiveShadow = true; g.add(shell);
-  for (const x of [1.6, 5.2, 9.4]) box(x - .07, x + .07, 6.0, 7.22, PF + 1.15, PF + 1.3, desMat.hadid, g);   // slim columns under the shell edge
-});
-
-design('gehry', 'Frank Gehry', { skin: 'render', render: 0xaeb3b6, rough: .45, frames: 0x30343a, roof: false, bal: false,
-  note: 'Brushed stainless steel, folded and billowing. A twisted steel canopy floats over the roof terrace, leaning steel shards break up the front, and a steel drum wraps the rounded corner. Dramatic, but every curved sheet needs its own steel frame: out of the minor-works scope.' }, g => {
-  // a curved, twisted sheet: w x h plane, bent by 'bend' across its width and twisted by 'twist' along it
-  const sheet = (w, h, bend, twist, pos, rot) => { const geo = new THREE.PlaneGeometry(w, h, 24, 12), P = geo.attributes.position;
+// ---- geometry helpers for the visions ----
+const D = {
+  poly(pts, yTop, th, mat, g) { const sh = new THREE.Shape(); pts.forEach(([x, z], i) => i ? sh.lineTo(x, -z) : sh.moveTo(x, -z));
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: th, bevelEnabled: false, curveSegments: 24 }); geo.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(geo, mat); m.position.y = yTop - th; m.castShadow = m.receiveShadow = true; g.add(m); return m; },
+  wall(pts, y, h, th, mat, g) { const out = [];
+    for (let i = 0; i < pts.length - 1; i++) { const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], L = Math.hypot(x1 - x0, z1 - z0); if (L < .005) continue;
+      const s = new THREE.Mesh(new THREE.BoxGeometry(L + Math.min(th, .02), h, th), mat); s.position.set((x0 + x1) / 2, y + h / 2, (z0 + z1) / 2);
+      s.rotation.y = Math.atan2(-(z1 - z0), x1 - x0); s.castShadow = !mat.transparent; s.receiveShadow = true; g.add(s); out.push(s); } return out; },
+  glass(pts, y, h, g) { return D.wall(pts, y, h, .03, mats.glass, g); },
+  arc(cx, cz, r, a0, a1, n = 16) { const p = []; for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; p.push([cx + r * Math.cos(a), cz + r * Math.sin(a)]); } return p; },
+  sheet(w, h, bend, twist, pos, rot, mat, g) { const geo = new THREE.PlaneGeometry(w, h, 24, 12), P = geo.attributes.position;
     for (let i = 0; i < P.count; i++) { const u = P.getX(i) / w + .5, v = P.getY(i) / h + .5; P.setZ(i, bend * Math.sin(Math.PI * u) + twist * (u - .5) * (v - .5) * 2); }
-    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, desMat.steel); m.position.set(...pos); m.rotation.set(...rot); m.castShadow = true; g.add(m); return m; };
-  sheet(12.5, 5.2, 1.3, 1.6, [5.0, 8.25, BD + 1.6], [-Math.PI / 2 + .12, 0, .05]);            // billowing canopy over the terrace
-  sheet(2.6, 6.4, .7, .5, [4.0, 3.1, PF + .55], [.04, .32, .07]);                              // leaning shards on the front
-  sheet(2.2, 5.6, .6, -.6, [7.0, 2.9, PF + .6], [-.05, -.28, -.08]);
-  sheet(1.8, 4.2, .5, .4, [9.7, 4.3, PF + .45], [.03, .45, .12]);
-  const drum = new THREE.Mesh(new THREE.CylinderGeometry(EXr + .45, EXr + .75, 6.6, 32, 1, true, Math.PI * 1.42, Math.PI * .72), desMat.steel);
-  drum.position.set(EXr, 3.0, PF - EXr); drum.rotation.z = .05; drum.castShadow = true; g.add(drum);                        // drum round the corner
-  sheet(4.2, 3.2, .9, 1.0, [11.6, 8.6, 3.2], [-.3, Math.PI / 2 - .3, .25]);                     // steel fold over the west tower
-  flatRoof(8.35, .14, .2, M({ color: 0x8e9396, roughness: .5 }), g);
-  frontUpstand(5.95, 1.0, .05, .04, desMat.steel, g);
-  for (const [x, z] of [[1.0, BD + 3.6], [9.4, BD + 3.7]]) box(x - .06, x + .06, 5.95, 7.7, z - .06, z + .06, desMat.steel, g);
+    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, mat); m.position.set(...pos); m.rotation.set(...rot); m.castShadow = true; g.add(m); return m; },
+  ribbon(pts3, w, h, mat, g) { const path = new THREE.CatmullRomCurve3(pts3.map(p => V(...p)), false, 'centripetal', .5);
+    const sh = new THREE.Shape(); sh.moveTo(-h / 2, -w / 2); sh.lineTo(h / 2, -w / 2); sh.lineTo(h / 2, w / 2); sh.lineTo(-h / 2, w / 2); sh.lineTo(-h / 2, -w / 2);
+    const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { steps: Math.max(60, pts3.length * 24), bevelEnabled: false, extrudePath: path }), mat); m.castShadow = m.receiveShadow = true; g.add(m); return m; },
+  battens(pts, y1, y2, spacing, w, d, mat, g, skip) { const list = [];
+    for (let i = 0; i < pts.length - 1; i++) { const [x0, z0] = pts[i], [x1, z1] = pts[i + 1], L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / spacing)), ang = Math.atan2(-(z1 - z0), x1 - x0);
+      for (let k = 0; k < n; k++) { const t = (k + .5) / n, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t; if (!skip || !skip(x, z, i, k)) list.push([x, z, ang]); } }
+    const im = new THREE.InstancedMesh(new THREE.BoxGeometry(w, 1, d), mat, Math.max(1, list.length)), o = new THREE.Object3D();
+    list.forEach(([x, z, a], i) => { o.position.set(x, (y1 + y2) / 2, z); o.scale.set(1, y2 - y1, 1); o.rotation.set(0, a, 0); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
+    im.count = list.length; im.castShadow = true; g.add(im); return im; },
+  louvres(x1, x2, yTop, z0, n, step, depth, mat, g) { for (let i = 0; i < n; i++) box(x1, x2, yTop - .03 - i * .02, yTop - i * .02, z0 + i * step, z0 + i * step + depth, mat, g); },
+  roofPlane(x1, x2, z1, z2, y1, y2, th, mat, g) { const L = Math.hypot(z2 - z1, y2 - y1), m = new THREE.Mesh(new THREE.BoxGeometry(x2 - x1, th, L), mat);
+    m.position.set((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2); m.rotation.x = -Math.atan2(y2 - y1, z2 - z1); m.castShadow = m.receiveShadow = true; g.add(m); return m; },
+  edges(mesh, color = 0x333333) { mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry), new THREE.LineBasicMaterial({ color }))); return mesh; },
+};
+// After-frame helpers (used by the owner's refined design, which builds on the After)
+function frontOutline(o, back = BD) { const pts = [[BW + o, back], [BW + o, PF + o]];
+  for (let i = 0; i <= 14; i++) { const t = Math.PI / 2 + (i / 14) * Math.PI / 2; pts.push([EXr + Math.cos(t) * (EXr + o), PF - EXr + Math.sin(t) * (EXr + o)]); }
+  pts.push([-o, back]); return pts; }
+// the house's own roof meshes (hidden by visions that replace the roof)
+const houseRoof = []; common.traverse(o => { if (o.isMesh && o.material === mats.roof) { const bb = new THREE.Box3().setFromObject(o); if (bb.min.y > 8 && bb.max.x < 13.5 && bb.min.z > -1.5) houseRoof.push(o); } });
+function design(key, name, cfg, build) {
+  const g = new THREE.Group(); g.visible = false; DES_GRP.add(g);
+  try { build(g); } catch (e) { console.error('design ' + key + ' failed: ' + e.message); }
+  DES[key] = { name, g, base: 'before', ...cfg, hidden: null };
+}
+
+// ---- vision: hadid ----
+design('hadid', 'Zaha Hadid Architects', {
+  short: 'Hadid',
+  base: 'before',
+  brick: 'keep',
+  white: 'keep',
+  frames: 0x2e3134,
+  roof: false,
+  remove: [
+    [-1.4, 11.25, -2.3, 1.1, 6.4, 11.8],         // old timber deck, its posts and the tube-and-mesh railing (front frame sits 0.55 m north)
+    [-0.55, 2.6, 1.85, 2.8, 6.45, 11.75],        // shade sail
+    [-0.56, -0.44, -0.05, 2.05, 11.65, 11.75],   // shade sail post
+    [-0.45, 10.85, 8.25, 8.55, -0.45, 6.85],     // hip roof fascia trims (the tiles go with roof: false)
+    [2.2, 13.6, 8.0, 9.2, -11.9, -6.1],          // tube pool fence (replaced in glass where the new roof lands)
+  ],
+  note: 'One continuous surface, read off the slope. Behind the house the pool sits at almost exactly the height of the old roof eaves, so the tiled hip roof is replaced by a thin white shell that rises off the pool edge, lifts over the bedrooms and flies out past the north wall as a knife-edge eave (0.8 m at the west, about 1.2 m at the east corner, where it climbs like a wing tip). Its back edge is skewed: west of the footbridge it comes right down onto the pool edge and shelters the stone terrace; over the study it stops short as a lifted lip, so the study keeps its windows. The garden behind effectively runs onto the roof. A strip of clerestory glass between the top of the brick and the shell makes the roof float, and the bedrooms get vaulted ceilings. At the front a second surface does the work of the old deck, sail and parapet: it runs as a 0.9 m eave over the living-room glass, swings out at the east corner, folds down into a curved wall against the apartment block, and turns back into the deck floor, which flows out into two curved planted terraces down the garden. The three-storey brick box, the glass projection, the entry tower, the zig-zag stair and the gum all stay; the brick is left as found, the ground the new white surfaces move over. Removed: the tile roof and its fascia, the timber deck and railing, the shade sail, the tube pool fence. Sun: the eaves over north glass are 0.8 to 1.2 m deep and set well above the window heads, so the midwinter sun (32.6 degrees) reaches the full height of the living and bedroom glass and the high summer sun (79.5 degrees) is kept off. The north clerestory is under the roof eave too. The west glass gets a row of twisted white fins hung from the eave. The deck is open to the north; the folded wall closes only the east side, which the apartment block already shades.',
+}, g => {
+  const WH = M({ color: 0xf2f1ed, roughness: .3 }), WH2 = M({ color: 0xf2f1ed, roughness: .3, side: THREE.DoubleSide });
+  const GREEN = M({ color: 0x6f8748, roughness: 1 });
+  const sstep = t => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+  // smooth surface through a grid of points; out = a point-pair [inside, outside] giving which way the face should look
+  function grid(rows, mat, out) {
+    const R = rows.length, C = rows[0].length, pos = [], idx = [];
+    rows.forEach(r => r.forEach(p => pos.push(p[0], p[1], p[2])));
+    for (let i = 0; i < R - 1; i++) for (let j = 0; j < C - 1; j++) { const a = i * C + j, b = a + 1, c = a + C, d = c + 1; idx.push(a, c, b, b, c, d); }
+    if (out) { const i = Math.floor((R - 1) / 2), j = Math.floor((C - 1) / 2), P = (ii, jj) => V(...rows[ii][jj]);
+      const n = new THREE.Vector3().crossVectors(P(i + 1, j).sub(P(i, j)), P(i, j + 1).sub(P(i, j)));
+      if (n.dot(V(...out[1]).sub(V(...out[0]))) < 0) for (let k = 0; k < idx.length; k += 3) { const t = idx[k + 1]; idx[k + 1] = idx[k + 2]; idx[k + 2] = t; } }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; g.add(m); return m;
+  }
+  // closed thin shell from a top grid and a bottom grid, all faces looking outward
+  function shell(top, bot, mat) {
+    const N = top.length - 1, L = top[0].length - 1, mi = Math.floor(N / 2), mj = Math.floor(L / 2), col = (A, j) => A.map(r => r[j]);
+    grid(top, mat, [bot[mi][mj], top[mi][mj]]); grid(bot, mat, [top[mi][mj], bot[mi][mj]]);
+    grid([top[0], bot[0]], mat, [top[1][mj], top[0][mj]]); grid([top[N], bot[N]], mat, [top[N - 1][mj], top[N][mj]]);
+    grid([col(top, 0), col(bot, 0)], mat, [top[mi][1], top[mi][0]]); grid([col(top, L), col(bot, L)], mat, [top[mi][L - 1], top[mi][L]]);
+  }
+  const lerpKeys = (keys, s) => { if (s <= keys[0][0]) return keys[0][1];
+    for (let i = 0; i < keys.length - 1; i++) { const [s0, v0] = keys[i], [s1, v1] = keys[i + 1]; if (s <= s1) return v0 + (v1 - v0) * sstep((s - s0) / (s1 - s0)); }
+    return keys[keys.length - 1][1]; };
+
+  // ================= 1. ROOF SHELL: lifts off the pool edge, flies out over the north wall =================
+  // plan: north eave 0.9 m out from the brick, rounded corners; the trailing (south) edge is skewed: over the study it stops short as a lifted lip,
+  // west of the footbridge it runs all the way down onto the pool edge
+  const ZN = 7.35, ZS = -6.05, XE = -0.45, XW = 12.75, RC = 1.3;
+  const prof = new THREE.SplineCurve([[ZN, 9.22], [6.45, 9.4], [3.4, 9.85], [0, 9.62], [-2.9, 9.2], [-4.7, 8.7], [ZS, 8.18]].map(([a, b]) => new THREE.Vector2((ZN - a) / (ZN - ZS), b)));
+  const NV = 48, NU = 44, sp = prof.getPoints(NV * 2);
+  const P = v => { for (let i = 0; i < sp.length - 1; i++) { const a = sp[i], b = sp[i + 1]; if (v >= a.x && v <= b.x) return a.y + (b.y - a.y) * (v - a.x) / (b.x - a.x); } return v < .5 ? sp[0].y : sp[sp.length - 1].y; };
+  const zN = x => { const d = Math.max(XE + RC - x, x - (XW - RC), 0); return ZN - .12 + .5 * sstep((6.5 - x) / 7) - (RC - Math.sqrt(Math.max(0, RC * RC - d * d))); };   // eave swells out toward the east corner
+  const zS = x => -3.25 + (ZS + 3.25) * sstep((x - 3.6) / 2.6);
+  const yS = x => 8.18 + .72 * (1 - sstep((x - 3.6) / 2.6));
+  const vOf = (x, z) => Math.max(0, Math.min(1, (zN(x) - z) / (zN(x) - zS(x))));
+  const roofTop = (x, z) => { const v = vOf(x, z);
+    return P(v) + (yS(x) - 8.18) * Math.pow(v, 1.6) + .5 * sstep((6.0 - x) / 6.8) * Math.pow(1 - v, 2); };   // one sweep: the eave climbs toward the east corner like a wing tip
+  const roofBot = (x, z) => roofTop(x, z) - (.1 + .26 * Math.pow(Math.sin(Math.PI * vOf(x, z)), .6));
+  { const top = [], bot = [];
+    for (let i = 0; i <= NV; i++) { const v = i / NV, rt = [], rb = [];
+      for (let j = 0; j <= NU; j++) { const x = XE + (XW - XE) * j / NU, z = zN(x) + (zS(x) - zN(x)) * v; rt.push([x, roofTop(x, z), z]); rb.push([x, roofBot(x, z), z]); }
+      top.push(rt); bot.push(rb); }
+    shell(top, bot, WH); }
+  // clerestory glass between the top of the walls and the shell (brick tops at 8.5, sunroom and study at 8.3-8.42)
+  const clere = (pts, y0) => { for (let k = 0; k < pts.length - 1; k++) { const [x0, z0] = pts[k], [x1, z1] = pts[k + 1], L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / .5));
+    for (let i = 0; i < n; i++) { const xa = x0 + (x1 - x0) * i / n, za = z0 + (z1 - z0) * i / n, xb = x0 + (x1 - x0) * (i + 1) / n, zb = z0 + (z1 - z0) * (i + 1) / n;
+      const h = Math.min(roofBot(xa, za), roofBot(xb, zb)) - y0 - .01; if (h > .05) D.glass([[xa, za], [xb, zb]], y0, h, g); } } };
+  clere([[0, BD], [BW, BD]], 8.5); clere([[0, 0], [0, BD]], 8.5); clere([[0, 0], [1.1, 0]], 8.5); clere([[6.4, 0], [BW, 0]], 8.5);
+  clere([[BW, BD], [SW, BD], [SW, .63], [BW, .63]], 8.3);
+  clere([[1.1, 0], [1.1, -2.6], [6.4, -2.6], [6.4, 0]], 8.42);
+  // slim white mullions on the north clerestory
+  for (let x = .02; x <= BW; x += BW / 6) box(x - .03, x + .03, 8.5, roofBot(x, BD) + .01, BD - .03, BD + .03, WH, g);
+  // pool fence, now frameless glass, along the edge the roof lands on
+  D.wall([[2.3, -6.2], [13.5, -6.2], [13.5, -11.8]], 8.1, 1.0, .02, desMat.glassRail, g);
+
+  // ================= 2. THE FOLD: eave over the living glass -> east wall -> deck floor =================
+  const spine = [];
+  const line = (a, b, n) => { for (let i = 0; i < n; i++) spine.push([a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n]); };
+  const arc = (cx, cy, r, a0, a1, n) => { for (let i = 0; i < n; i++) { const a = a0 + (a1 - a0) * i / n; spine.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } };
+  const YT = 6.5, R1 = 1.9, R2 = 1.5, XWALL = -0.9, YF = -0.2;
+  line([10.9, YT], [1.0, YT], 30);
+  arc(1.0, YT - R1, R1, Math.PI / 2, Math.PI, 14);
+  line([XWALL, YT - R1], [XWALL, YF + R2], 6);
+  arc(XWALL + R2, YF + R2, R2, Math.PI, Math.PI * 1.5, 12);
+  line([XWALL + R2, YF], [1.25, YF], 1); spine.push([1.25, YF]);
+  const cum = [0]; for (let i = 1; i < spine.length; i++) cum.push(cum[i - 1] + Math.hypot(spine[i][0] - spine[i - 1][0], spine[i][1] - spine[i - 1][1]));
+  const sAtX = x => 10.9 - x;                       // stations along the straight top run
+  const sTopEnd = 10.9 - 1.0, sArc1 = sTopEnd + R1 * Math.PI / 2, sWall = sArc1 + (YT - R1 - YF - R2), sArc2 = sWall + R2 * Math.PI / 2;
+  const ZIN = [[0, BD], [sAtX(3.15), BD], [sAtX(2.45), 8.75], [sTopEnd, 8.6], [sArc1, 8.0], [sWall, 7.3], [sArc2, 6.6]];
+  const ZOUT = [[0, 9.55], [.5, 10.12], [sAtX(3.2), 10.22], [sTopEnd, 10.8], [sArc1, 11.25], [sWall, 11.65], [sArc2, 11.8]];
+  { const TH = .25, top = [], bot = [], NZ = 6;
+    for (let i = 0; i < spine.length; i++) {
+      const p = spine[i], q = spine[Math.min(i + 1, spine.length - 1)], o = spine[Math.max(i - 1, 0)];
+      let tx = q[0] - o[0], ty = q[1] - o[1]; const tl = Math.hypot(tx, ty); tx /= tl; ty /= tl;
+      const nx = -ty, ny = tx, zi = lerpKeys(ZIN, cum[i]), zo = lerpKeys(ZOUT, cum[i]), rt = [], rb = [];
+      for (let j = 0; j <= NZ; j++) { const z = zi + (zo - zi) * j / NZ; rt.push([p[0], p[1], z]); rb.push([p[0] + nx * TH, p[1] + ny * TH, z]); }
+      top.push(rt); bot.push(rb);
+    }
+    shell(top, bot, WH); }
+  // west glass: twisted fins hung from the eave, turning progressively to the north
+  for (let k = 0; k < 9; k++) { const z = 6.62 + k * .315, a = .25 + .07 * k;
+    D.sheet(.5, 3.27, 0, .16, [10.66, 2.95 + 3.27 / 2, z], [0, a, 0], WH2, g); }
+
+  // ================= 3. DECK and the planted terraces that carry its line down the garden =================
+  const deckEdge = new THREE.SplineCurve([[10.45, 11.2], [8.8, 12.05], [6.2, 12.5], [3.6, 12.35], [1.6, 11.9], [0.2, 11.8], [XWALL + .25, 11.8]].map(([a, b]) => new THREE.Vector2(a, b))).getSpacedPoints(40).map(v => [v.x, v.y]);
+  D.poly([[XWALL + .25, 6.5], [PX, 6.5], [PX, PF], [10.45, PF], ...deckEdge], .04, .34, WH, g);
+  D.wall(deckEdge.slice(0, -1), .04, 1.0, .02, desMat.glassRail, g);
+  const terrace = (front, back, yTop) => {
+    D.poly([...front, ...back.slice().reverse()], yTop, .12, GREEN, g);
+    D.wall(front, yTop - 2.6, 2.72, .2, WH, g);
+  };
+  const curve = (pts, n = 36) => new THREE.SplineCurve(pts.map(([a, b]) => new THREE.Vector2(a, b + .55))).getSpacedPoints(n).map(v => [v.x, v.y]);
+  // face below the deck edge
+  D.wall(deckEdge.slice(0, -1), -1.45, 1.2, .2, WH, g);
+  const t1 = curve([[9.0, 11.5], [7.4, 12.55], [4.6, 13.0], [1.8, 12.95], [-0.6, 12.7]]);
+  const t1back = curve([[9.0, 11.4], [8.8, 11.45], [6.2, 11.9], [3.6, 11.75], [1.6, 11.3], [-0.6, 11.2]]);
+  terrace(t1, t1back, -1.3);
+  const t2 = curve([[8.7, 12.7], [7.0, 13.55], [5.0, 14.15], [3.4, 14.2], [2.3, 13.95]]);
+  const t2back = curve([[8.7, 12.62], [7.4, 12.5], [4.6, 12.95], [3.4, 12.98], [2.3, 12.98]]);
+  terrace(t2, t2back, -2.55);
 });
 
-design('ando', 'Tadao Ando', { skin: 'render', render: 0xa9a8a2, rough: .9, map: 'conc', frames: 0x2b2d2f, roof: false, bal: false,
-  note: 'Fair-faced concrete, few precise planes. The front becomes concrete panels with long horizontal slots, a concrete blade wall screens the east neighbour, and a thin flat concrete roof plane caps the house. Off-form concrete on this slope is out of scope; a render finish over the brick gets the look within it, but the small openings give up most of the north sun.' }, g => {
-  // concrete panel over the main-floor glass with one long slot; studio keeps a deep-set glass slot
-  box(EXr - .05, BW + .02, 3.0, 4.15, PF + .02, PF + .2, desMat.conc, g); box(EXr - .05, BW + .02, 4.75, 5.85, PF + .02, PF + .2, desMat.conc, g);
-  box(EXr - .05, BW + .02, 1.75, 2.95, PF + .02, PF + .2, desMat.conc, g);
-  frontUpstand(5.95, 1.1, .1, .2, desMat.conc, g);
-  box(-1.15, -0.85, -0.1, 8.9, 2.0, PF + 2.2, desMat.conc, g);        // blade wall on the east side
-  flatRoof(8.55, .22, 1.1, desMat.conc, g);
-  box(-0.35, BW + .4, 8.3, 8.55, -0.35, BD + .35, desMat.conc, g);    // parapet band under the plane, hiding the old hip
+// ---- vision: gehry ----
+design('gehry', 'Frank Gehry', {
+  base: 'before',
+  brick: 'keep',
+  white: 'keep',
+  roof: true,
+  remove: [
+    [-0.6, 2.6, 1.85, 2.8, 6.48, 11.8],     // the shade sail (the front of the model sits in a frame shifted 0.55 m north)
+    [-0.6, -0.4, -0.03, 2.05, 11.65, 11.76], // and its pole
+  ],
+  note: 'Gehry did not knock down his Santa Monica bungalow: he kept it, ordinary as it was, and built a cheap new skin around it that the old house pokes through. This does the same here. The brick house, its tile roof, the white glass projection, the entry and the study all stay as they are; only the shade sail goes. The old deck stays, its railing now behind the new wall. A wall of plain galvanised corrugated iron wraps the house where the deck meets the garden. It stands tall at the north-east corner and against the cream block next door, where there is no sun to lose anyway, and slides down to balustrade height in front of the glass, so the north light is untouched. Out of the top of that wall a glass room with raw timber studs tumbles off the corner at the main level, tipped a few degrees as if it is falling: a north-and-east-facing breakfast room opened out of the living room by enlarging the existing window in the brick wall beside the glass projection into a doorway. Its corrugated lid overhangs the north glass by about 0.9 m, so it takes winter sun (32.6 degrees at noon) and shades itself in summer. A second, smaller tilted glass cube breaks through the hip roof as a skylight, cutting a hole in the tiles to light the middle of the upper floor. The west glass gets a raked chain-link screen on steel pipe that takes the edge off the afternoon sun (chain-link only blocks a fraction of it; a shade-cloth lining would be needed for real relief) and carries on up as the fence of a roof terrace on top of the projection. Behind, a warped chain-link canopy on pipe posts shades the stone terrace by the pool. Every new material is cheap and off the shelf: corrugated iron, chain-link, studs, ply and clear glass.',
+}, g => {
+  const CORR = desMat.corr, STUD = desMat.timber, PLY = desMat.ply, PIPE = desMat.steel;
+
+  // ---- a wall of corrugated iron along a straight line, with a top that slopes from h0 to h1 ----
+  const corrWall = (x0, z0, x1, z1, yb, h0, h1, th = .06) => {
+    const L = Math.hypot(x1 - x0, z1 - z0), sh = new THREE.Shape();
+    sh.moveTo(0, yb); sh.lineTo(L, yb); sh.lineTo(L, h1); sh.lineTo(0, h0); sh.lineTo(0, yb);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: th, bevelEnabled: false }); geo.translate(0, 0, -th / 2);
+    const m = new THREE.Mesh(geo, CORR); m.position.set(x0, 0, z0); m.rotation.y = Math.atan2(-(z1 - z0), x1 - x0);
+    m.castShadow = m.receiveShadow = true; g.add(m);
+    // a pipe capping the top edge
+    rod(V(x0, h0, z0), V(x1, h1, z1), .03, PIPE, g);
+    return m;
+  };
+
+  // ---- chain-link panel: a flat quad from four corners, with the mesh scaled to its size ----
+  const chainMat = (w, h) => { const m = desMat.chain.clone(); m.map = desMat.chain.map.clone(); m.map.repeat.set(w * 1.6, h * 1.6); m.map.needsUpdate = true; return m; };
+  const chainQuad = (a, b, c, d) => {   // a,b bottom; d,c top (each [x,y,z])
+    const w = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]), h = Math.hypot(d[0] - a[0], d[1] - a[1], d[2] - a[2]);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute([...a, ...b, ...c, ...a, ...c, ...d], 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1], 2));
+    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, chainMat(w, h)); g.add(m);
+    for (const [p, q] of [[a, b], [b, c], [c, d], [d, a]]) rod(V(...p), V(...q), .03, PIPE, g);
+    return m;
+  };
+
+  // ---- a tilted glass box framed in raw studs, built in its own local frame ----
+  // local x -sx/2..sx/2, y 0..sy, z -sz/2..sz/2 (+z = the outward, north face)
+  const tiltCube = (pos, rot, sx, sy, sz, o = {}) => {
+    const c = new THREE.Group(); c.position.set(...pos); c.rotation.set(...rot, 'YXZ'); g.add(c);
+    const hx = sx / 2, hz = sz / 2, s = .045;
+    // floor and back
+    if (o.floor !== false) box(-hx, hx, -.18, 0, -hz, hz, PLY, c);
+    if (o.back) box(-hx, hx, 0, sy, -hz, -hz + .05, PLY, c);
+    // glass on the open faces
+    box(-hx, hx, 0, sy, hz - .03, hz, mats.glass, c);                       // north
+    box(-hx, -hx + .03, 0, sy, -hz, hz, mats.glass, c);                     // east
+    box(hx - .03, hx, 0, sy, -hz, hz, mats.glass, c);                       // west
+    if (o.glassTop) box(-hx, hx, sy - .03, sy, -hz, hz, mats.glass, c);
+    // stud frame: the twelve edges
+    for (const x of [-hx, hx]) for (const z of [-hz, hz]) box(x - s, x + s, 0, sy, z - s, z + s, STUD, c);
+    for (const y of [0, sy]) { for (const z of [-hz, hz]) box(-hx, hx, y - s, y + s, z - s, z + s, STUD, c); for (const x of [-hx, hx]) box(x - s, x + s, y - s, y + s, -hz, hz, STUD, c); }
+    // glazing bars in a loose grid, like the kitchen window at Santa Monica
+    const n = o.bars || 2;
+    for (let i = 1; i <= n; i++) {
+      const t = i / (n + 1);
+      box(-hx + sx * t - .025, -hx + sx * t + .025, 0, sy, hz - .06, hz, STUD, c);                 // north verticals
+      box(-hx, hx, sy * t - .025, sy * t + .025, hz - .06, hz, STUD, c);                            // north horizontals
+      for (const x of [-hx, hx]) {
+        box(x - .03, x + .03, 0, sy, -hz + sz * t - .025, -hz + sz * t + .025, STUD, c);          // side verticals
+        box(x - .03, x + .03, sy * t - .025, sy * t + .025, -hz, hz, STUD, c);                      // side horizontals
+      }
+    }
+    // lid
+    if (o.lid) box(-hx - .25, hx + .25, sy + .045, sy + .12, -hz - .1, hz + o.lid, CORR, c);
+    return c;
+  };
+
+  // ======== 1. the corrugated wrap round the deck ========
+  const ZW = 11.9, XE = -1.47, YB = -2.6;   // north line just outside the deck edge, east line against the neighbour
+  corrWall(XE, 0.4, XE, 5.9, -0.3, 3.0, 3.25);       // along the east corridor: a high fence against the block next door
+  corrWall(XE, 5.9, XE, 8.6, YB, 3.25, 4.4);          // rising at the corner, under the glass room
+  corrWall(XE, 8.6, XE, ZW, YB, 4.4, 3.7);
+  corrWall(XE, ZW, 1.9, ZW, YB, 3.7, 1.15);           // north: sweeping down in front of the deck
+  corrWall(1.9, ZW, 10.35, ZW, YB, 1.15, 1.1);        // then balustrade height in front of the studio glass
+  corrWall(10.35, ZW, 10.35, 11.15, YB, 1.1, 1.1);     // return to the stair
+
+  // ======== 2. the glass room tumbling off the north-east corner, main level ========
+  const cube = tiltCube([0.5, 3.05, 8.45], [0.13, 0.17, 0.09], 3.5, 2.75, 3.3, { back: true, lid: 0.9, bars: 2 });
+  // two raw timber props down to the deck, splayed
+  rod(V(2.4, 0, 11.0), V(2.1, 2.95, 9.9), .07, STUD, g, 6);
+  // a ply collar closing the gap back to the brick, round the enlarged east window
+  box(-1.0, 2.6, 2.85, 3.0, 6.45, 7.0, PLY, g);
+
+  // ======== 3. a smaller tilted glass cube breaking through the hip roof over the stair ========
+  tiltCube([4.9, 8.45, 2.9], [-0.12, -0.35, 0.16], 1.6, 1.5, 1.6, { glassTop: true, floor: false, bars: 1 });
+
+  // ======== 4. west screen: a raked chain-link plane that carries on up as the roof-terrace fence ========
+  chainQuad([10.55, 2.95, 6.3], [10.55, 2.95, 9.75], [11.25, 7.3, 10.05], [11.25, 7.3, 6.3]);
+  for (const z of [6.3, 8.0, 9.75]) rod(V(10.4, 3.0, z), V(10.6, 3.0, z), .03, PIPE, g);    // brackets off the projection
+  // chain-link fence round the north edge of the projection roof (terrace), raked outward a little
+  chainQuad([2.95, 5.95, 9.2], [10.5, 5.95, 9.2], [10.95, 7.15, 9.45], [2.95, 7.15, 9.45]);
+  chainQuad([2.95, 5.95, 6.5], [2.95, 5.95, 9.2], [2.95, 7.15, 9.45], [2.95, 7.15, 6.5]);
+
+  // ======== 5. a warped chain-link canopy over the stone terrace by the pool ========
+  const posts = [[5.7, -3.45, 8.9], [11.4, -3.45, 7.8], [11.4, -6.15, 8.7], [5.7, -6.15, 7.6]];
+  for (const [x, z, y] of posts) rod(V(x, 5.68, z), V(x, y, z), .045, PIPE, g, 8);
+  chainQuad([5.7, 8.9, -3.45], [11.4, 7.8, -3.45], [11.4, 8.7, -6.15], [5.7, 7.6, -6.15]);
 });
 
-design('flw', 'Frank Lloyd Wright', { skin: 'brick', render: 0xd8ccb2, frames: 0x3b2f25, roof: false, bal: false,
-  note: 'Brick kept, strong horizontals tied to the slope. Deep pale slab edges at each floor, a low broad roof plane with wide eaves, sandstone piers and a sandstone base under the deck. Eaves resized for Sydney (about 1 m, not his 1.5 m+) so winter sun still reaches the glass; steel outriggers keep it minor.' }, g => {
-  frontSlab(2.95, .24, 1.0, desMat.pale, g);
-  frontSlab(6.0, .3, 1.15, desMat.pale, g);
-  frontUpstand(6.0, .55, 1.05, .3, mats.brick, g);
-  flatRoof(8.45, .26, 1.2, desMat.pale, g);
-  box(-0.35, BW + .4, 8.2, 8.45, -0.35, BD + .35, mats.brick, g);
-  for (const x of [-1.2, 4.3, 10.25]) box(x - .3, x + .3, -1.6, 0, 10.9, 11.5, desMat.sandstone, g);   // piers under the deck edge
-  box(-1.35, 10.4, -1.3, -0.08, 11.05, 11.25, desMat.sandstone, g);                                   // sandstone base course
-  box(BW + .02, BW + .32, 0, 8.2, PF - 1.2, PF - .6, desMat.sandstone, g);                            // sandstone chimney-pier at the west end
+// ---- vision: ando ----
+design('ando', 'Tadao Ando', {
+  base: 'before',
+  brick: 'keep',
+  white: 0xa7a6a0,        // the later lightweight parts (projection walls, fibro sunroom, fibro study) re-skinned in thin precast concrete
+  frames: 0x2b2d2f,       // dark steel frames
+  roof: true,
+  remove: [
+    [-1.5, 10.45, -1.5, 1.1, 9.293, 11.85],  // old timber deck, its posts and tube railing (front frame sits 0.55 m north)
+    [-1.4, 2.65, -0.1, 0.01, 6.4, 9.35],     // deck running back to the east arch
+    [-1.45, -1.2, -0.1, 1.1, 6.4, 11.85],    // deck railing along the east side
+    [9.55, 11.25, -0.1, 0.01, 7.3, 11.2],    // timber porch deck at the main door
+    [-0.6, 2.6, 1.85, 2.8, 6.46, 11.8],      // shade sail
+    [-0.6, -0.4, -0.1, 2.1, 11.55, 11.85],   // shade sail pole
+    [11.45, 11.65, -2.7, 1.0, 7.25, 15.05],    // tube railing up the west side of the last flight and along the path
+    [10.35, 10.55, -2.7, 1.0, 11.05, 15.1],  // tube railing up the east side of the last flight
+    [5.35, 6.65, 5.75, 6.85, -4.5, -2.55],   // footbridge tube railings
+    [5.35, 6.35, 1.25, 5.65, -3.9, -2.9],    // footbridge posts (the new concrete bridge spans)
+    [6.2, 10.55, 5.75, 6.85, -4.95, -3.25],  // tube railing on the stone terrace's north edge
+    [8.1, 9.1, 5.69, 5.91, -5.7, -4.8],      // grass planter in the stone paving
+    [0.8, 5.55, 5.75, 9.15, -5.4, -4.35],    // tube railing on the open side of the pool stair
+    [2.2, 13.6, 8.0, 9.2, -6.3, -6.1],       // pool fence, north side
+    [13.4, 13.6, 8.0, 9.2, -11.9, -6.1],     // pool fence, west side
+  ],
+  note: 'The brick house stays as it is, hip roof and all. Ando inserts concrete beside it rather than over it. At the front, a freestanding concrete frame stands 0.9 m off the glass: a wall on the east boundary screening the apartment block, a wall on the west side of the entry path, and a thin concrete eave and beam joining them at the projection roof line. Nothing solid goes in front of the north glass; the frame only sets the edge of the view, like a picture frame, and a strip of still water runs along the terrace edge to throw sky light back into the rooms. The old timber deck, sail and tube railings go; the terrace becomes concrete. You reach the door up the last flight between low concrete walls, under the canopy and along the lane between the west wall and the glass. Neither wall touches the old brick: a gap is left at each end so light slides down the house. The later lightweight parts (the projection walls, the fibro sunroom and study) are re-clad in thin concrete panels so the old brick reads against one new material. At the back, the stone terrace becomes a walled court open to the sky: the pool wall is faced in concrete, keeping its window into the water, a long concrete wall runs up the west boundary past the pool, concrete parapets and solid bridge and stair sides replace the tube rails, the pool gets a concrete coping and a frameless glass barrier, and a channel of water sits at the foot of the pool wall. Sun: the 0.9 m eave lets midwinter noon sun (32.6 degrees) reach almost the full height of the main-floor glass and keeps out summer noon sun (79.5 degrees). The west wall and canopy screen the projection\'s west glass. The east court is open to the sky; the apartment block already takes its early morning sun.',
+}, g => {
+  const C = desMat.conc;
+  const TOP = 6.0;                       // one datum for the whole frame: the projection roof line
+  // ---------- front terrace: concrete slab replacing the timber deck, plinth face down to the slope ----------
+  const FE = 11.75;                      // terrace edge (the old deck edge)
+  box(-1.3, 10.4, -0.25, 0, PF, 10.2, desMat.pale, g);
+  box(-1.3, 10.4, -0.6, -0.32, 10.2, FE - .2, C, g);                  // floor of the water trough
+  box(-1.3, PX, -0.25, 0, BD, PF, desMat.pale, g);
+  box(-1.3, 10.4, -2.6, -0.25, FE - .2, FE, C, g);                 // retaining face at the terrace edge
+  // still water beyond the frame line, brim-full, flush concrete coping
+  box(-1.3, 10.4, -0.32, -0.03, 10.2, FE - .2, mats.water, g);
+  box(-1.3, 10.4, -0.3, 0, FE - .2, FE, C, g);
+  D.wall([[-1.3, FE - .03], [10.4, FE - .03]], 0, 1.0, .02, desMat.glassRail, g);   // frameless glass balustrade (code), all but invisible
+  // ---------- the frame ----------
+  box(-1.55, -1.3, -2.4, TOP, 6.6, 10.2, C, g);                     // east wall on the boundary, free of the brick
+  box(11.65, 11.9, -0.45, TOP, 7.6, 10.2, C, g);                     // west wall: the entry lane, screening the west glass
+  box(PX, BW, 5.8, TOP, PF, 10.2, C, g);                              // 0.9 m eave over the north glass, off the projection roof
+  box(-1.3, PX, 5.65, TOP, 9.9, 10.2, C, g);                          // beam across the east court: open to the sky behind it
+  box(PX, 11.9, 5.65, 5.8, 9.9, 10.2, C, g);                          // shallow fascia, one line from wall to wall
+  box(BW, 11.9, 5.8, TOP, 7.6, 10.2, C, g);                           // canopy over the entry lane, stopping short of the tower
+  // low concrete walls up both sides of the last flight (replacing the tube rails), rising into the frame
+  const rake = (x1, x2, pts) => { const sh = new THREE.Shape(); pts.forEach(([z, y], i) => i ? sh.lineTo(z, y) : sh.moveTo(z, y));
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: x2 - x1, bevelEnabled: false }); geo.rotateY(-Math.PI / 2);
+    const m = new THREE.Mesh(geo, C); m.position.x = x2; m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+  const flight = [[11.15, -0.45], [14.95, -3.2], [14.95, -1.6], [11.15, 1.0]];   // follows the last flight, 1.0 m above the treads
+  rake(11.62, 11.82, flight); rake(10.22, 10.4, flight);
+  box(11.62, 11.82, -0.45, 1.0, 10.2, 11.15, C, g);
+  // ---------- back: a walled court open to the sky ----------
+  const SY = 5.8, PY = 8.1;
+  // pool wall faced in concrete, keeping the window into the pool
+  box(5.5, 13.55, SY, 6.7, -6.12, -6.02, C, g); box(5.5, 13.55, 7.6, PY, -6.12, -6.02, C, g);
+  box(5.5, 7.0, 6.7, 7.6, -6.12, -6.02, C, g); box(8.2, 13.55, 6.7, 7.6, -6.12, -6.02, C, g);
+  // water channel at the foot of the pool wall, concrete curb
+  box(6.6, 11.6, SY, SY + .04, -6.02, -5.65, mats.water, g);
+  box(6.6, 11.6, SY, SY + .1, -5.65, -5.55, C, g);
+  box(8.2, 9.0, 5.68, SY, -5.6, -4.9, mats.stone, g);                 // planter filled with paving
+  // long wall up the west boundary, past the court and the pool
+  box(13.3, 13.6, 5.6, PY + 1.2, -11.85, -3.3, C, g);
+  // concrete parapet on the terrace's north edge, solid concrete sides to the bridge
+  D.wall([[6.6, -4.42], [6.6, -3.32], [10.45, -3.32], [10.45, -4.9]], SY, 1.0, .2, C, g);
+  box(5.3, 5.5, 5.4, SY + 1.0, -4.42, -2.6, C, g); box(6.2, 6.4, 5.4, SY + 1.0, -4.42, -2.6, C, g);
+  box(5.4, 6.3, 5.4, 5.62, -4.4, -2.6, C, g);                        // deeper bridge beam
+  // pool wall above the stair, faced in concrete step by step
+  for (let i = 0; i < 13; i++) { const xa = 5.5 - 3.6 * i / 13, xb = 5.5 - 3.6 * (i + 1) / 13, y = SY + (PY - SY) * (i + 1) / 13;
+    box(xb, xa, y, PY, -6.12, -6.02, C, g); }
+  box(2.3, 1.9 + .01, PY - .02, PY, -6.12, -6.02, C, g);
+  // solid concrete upstand on the open side of the pool stair
+  { const sh = new THREE.Shape(); [[5.5, 5.4], [5.5, SY + 1.0], [1.9, PY + 1.0], [0.9, PY + 1.0], [0.9, PY - .3], [1.9, PY - .3]].forEach(([x, y], i) => i ? sh.lineTo(x, y) : sh.moveTo(x, y));
+    const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: .2, bevelEnabled: false }), C); m.position.z = -5.3; m.castShadow = m.receiveShadow = true; g.add(m); }
+  box(5.35, 5.55, 5.4, SY + 1.0, -5.3, -4.42, C, g);
+  // pool coping in concrete over the old pebble edge
+  box(2.3, 13.55, PY - .02, PY + .03, -7.0, -6.12, C, g); box(2.3, 13.55, PY - .02, PY + .03, -11.8, -11.5, C, g);
+  box(2.3, 2.6, PY - .02, PY + .03, -11.5, -7.0, C, g); box(13.25, 13.55, PY - .02, PY + .03, -11.5, -7.0, C, g);
+  // pool barrier: frameless glass on the concrete coping
+  D.wall([[2.3, -6.2], [13.3, -6.2]], PY, 1.2, .02, desMat.glassRail, g);
 });
 
-design('seidler', 'Harry Seidler', { skin: 'render', render: 0xf2f1ec, frames: 0x25282b, roof: false, bal: false,
-  note: 'Sydney modernism: crisp white render, bold horizontal balcony slabs projecting over the slope, the curved glazed corner kept as the signature, a flat roof with a thin edge. Slabs held to about 1.2 m so they stay outriggers, not new frames; they double as north sunshades.' }, g => {
-  frontSlab(2.98, .42, 1.2, desMat.white, g);
-  frontSlab(6.0, .48, 1.25, desMat.white, g);
-  frontUpstand(6.0, .32, 1.15, .2, desMat.white, g); frontUpstand(6.32, .72, 1.15, .03, desMat.glassRail, g);
-  flatRoof(8.45, .3, .5, desMat.white, g);
-  box(-0.35, BW + .4, 8.2, 8.45, -0.35, BD + .35, desMat.white, g);
-  box(BW + .05, BW + .3, 0, 8.75, BD, PF + 1.25, desMat.white, g);   // vertical white fin at the west end
+// ---- vision: flw ----
+design('flw', 'Frank Lloyd Wright', {
+  short: 'Wright',
+  base: 'before',
+  brick: 'keep',
+  white: 0xd6c09a,          // the white projection, sunroom and study take the same light ochre as the new trays (Fallingwater's concrete colour)
+  frames: 0x4a3426,         // dark stained-timber window frames, close to the projection's existing dark frames
+  roof: false,
+  remove: [
+    [-1.4, 10.45, -2.0, 0.01, 6.4, 11.8],     // old timber deck boards and its posts (the front garden sits 0.55 m further north in the model)
+    [-1.45, -1.25, -0.1, 1.1, 6.4, 11.85],    // deck railing, east side
+    [-1.45, 10.5, -0.1, 1.1, 11.65, 11.85],   // deck railing, front
+    [10.3, 10.5, -0.1, 1.1, 11.1, 11.85],     // deck railing, west stub
+    [-0.6, 2.6, -0.1, 2.78, 6.495, 11.76],    // shade sail and its pole
+    [2.8, 10.45, 5.9, 6.25, 9.1, 9.35],       // low white parapet on the projection roof, replaced by the upper tray's parapet
+  ],
+  note: 'Wright would keep the face brick and the house\'s three floors, and make it grow out of the sandstone by giving it a stone core and stretching every floor out over the slope as a horizontal tray. A sandstone pier rises at the open east corner, from the garden through all three levels and up through the eaves as a chimney. Off it, the old timber deck becomes a cantilevered concrete terrace with solid rounded parapets (the Fallingwater move), reaching about 3 m past the studio glass. At the main floor a thin plane runs round the glass projection 0.9 m deep, and at the upper floor the projection roof becomes a walled roof terrace that also projects 0.9 m. The terracotta hip roof is rebuilt at a flatter pitch and much broader, with a 1.0 m eave to the north and wider eaves east and west, so the house reads as layers of shelter. The white walls, sunroom and study go a light ochre to match the trays. The sun decides the depths: 0.9 to 1.0 m over every north window lets the 32.6 degree midwinter sun right in and keeps the 79.5 degree midsummer sun off. Nothing deep sits over north glass, which is not how Wright shaded his Prairie houses at 42 degrees north, but it is what he would do here. The west glass gets vertical timber fins. Removed: the old deck, its railings, the shade sail, the projection\'s low parapet and the old roof covering. Behind, the study keeps its walls and gets a thin ochre lid that overhangs like the main roof. Low sandstone ledge walls step the front garden down like rock shelves. The gum stays.',
+}, g => {
+  const ochre = M({ color: 0xd6c09a, roughness: .85 });
+  const stone = desMat.sandstone, wood = desMat.timber;
+  const green = M({ color: 0x5f7a46, roughness: 1 });
+
+  // ---- the stone core: a sandstone pier at the open east corner, from the garden up through the eaves as a chimney ----
+  box(-0.3, 0.72, -1.2, 9.95, BD, 8.6, stone, g);
+  box(-0.4, 0.82, 9.95, 10.1, BD - .1, 8.7, stone, g);                       // cap
+  box(-0.9, 1.2, -1.8, -0.35, BD, 11.2, stone, g);                         // its footing spreading under the terrace
+  for (let y = 0.6; y < 9.9; y += 1.15) box(-0.32, 0.74, y, y + .07, BD, 8.62, M({ color: 0xb79a6c, roughness: 1 }), g);   // coursed bands so it reads as laid stone
+
+  // ---- studio-level terrace: a cantilevered concrete tray replacing the deck ----
+  const r = .6;
+  const t0 = [[-1.35, 5.9], [0, 5.9], [0, BD], [PX, BD], [PX, PF], [10.4, PF], [10.4, 12.3 - r],
+    ...D.arc(10.4 - r, 12.3 - r, r, 0, Math.PI / 2, 6), ...D.arc(-1.35 + r, 12.3 - r, r, Math.PI / 2, Math.PI, 6)];
+  D.poly(t0, 0.0, .35, ochre, g);
+  box(-1.3, 10.35, -0.02, 0.01, 9.35, 12.1, M({ color: 0xa7896a, roughness: .9 }), g);   // flagstone floor finish
+  const p0 = [[10.4, 11.15], [10.4, 12.3 - r], ...D.arc(10.4 - r, 12.3 - r, r, 0, Math.PI / 2, 6), ...D.arc(-1.35 + r, 12.3 - r, r, Math.PI / 2, Math.PI, 6), [-1.35, 7.0]];
+  D.wall(p0, -0.35, 1.3, .22, ochre, g);
+  // planting along the inside of the terrace parapet
+  box(1.5, 8.6, 0, .35, 11.65, 12.05, green, g);
+
+  // ---- main-floor plane: 0.9 m round the glass projection, 1.0 m along the east wall ----
+  const t1 = [[-0.3, BD], [PX, BD], [PX, PF], [10.6, PF], [10.6, PF + .9], ...D.arc(PX - .4, PF + .4, .5, Math.PI / 2, Math.PI, 6), [PX - .9, 7.45], [-0.3, 7.45]];
+  D.poly(t1, 3.0, .18, ochre, g);
+  box(PX - .85, 10.55, 3.0, 3.28, PF + .7, PF + .88, ochre, g);            // low upstand at the edge
+  box(PX - .85, 10.55, 3.0, 3.22, PF + .1, PF + .7, green, g);             // planter along the band, Wright's flower boxes
+
+  // ---- upper tray: the projection roof becomes a walled roof terrace, projecting 0.9 m ----
+  const t2 = [[-0.3, BD], [10.6, BD], [10.6, PF + .4], ...D.arc(10.1, PF + .4, .5, 0, Math.PI / 2, 6), ...D.arc(PX - .4, PF + .4, .5, Math.PI / 2, Math.PI, 6), [PX - .9, 7.45], [-0.3, 7.45]];
+  D.poly(t2, 6.0, .25, ochre, g);
+  box(PX, 10.4, 5.99, 6.01, BD + .3, PF + .6, M({ color: 0xa7896a, roughness: .9 }), g);
+  const p2 = [[10.6, BD + .05], [10.6, PF + .4], ...D.arc(10.1, PF + .4, .5, 0, Math.PI / 2, 6), ...D.arc(PX - .4, PF + .4, .5, Math.PI / 2, Math.PI, 6), [PX - .9, 7.45], [0.72, 7.45]];
+  D.wall(p2, 6.0, .9, .22, ochre, g);
+
+  // ---- the roof: rebuilt flatter and much broader, terracotta kept, 1.0 m north eave ----
+  const rx1 = -1.25, rx2 = 13.3, rz1 = -1.0, rz2 = BD + 1.0, ey = 8.5;
+  hipRoof(rx1, rx2, rz1, rz2, ey, 0.8, mats.roof, g);
+  D.poly([[rx1, rz1], [rx2, rz1], [rx2, rz2], [rx1, rz2]], ey - .005, .05, ochre, g);   // soffit
+  box(rx1 - .06, rx2 + .06, ey - .2, ey + .06, rz2, rz2 + .06, ochre, g);   // fascia: one continuous line
+  box(rx1 - .06, rx2 + .06, ey - .2, ey + .06, rz1 - .06, rz1, ochre, g);
+  box(rx1 - .06, rx1, ey - .2, ey + .06, rz1, rz2, ochre, g);
+  box(rx2, rx2 + .06, ey - .2, ey + .06, rz1, rz2, ochre, g);
+  box(BW, SW, 8.3, ey, 0.63, BD, ochre, g);                                 // frieze over the sunroom, up to the new soffit
+
+  // ---- west glass: vertical timber fins against the afternoon sun ----
+  D.battens([[BW + .14, BD + .1], [BW + .14, PF + .3]], 3.0, 5.75, .3, .05, .16, wood, g);
+  D.battens([[BW + .14, BD + .1], [BW + .14, PF + .3]], 0.0, 2.82, .3, .05, .16, wood, g, (x, z) => z > 7.8 && z < 8.9);
+
+  // ---- front garden: long sandstone ledge walls, like the rock shelves the house grows from ----
+  box(-0.85, 8.6, -3.4, -1.6, 12.85, 13.45, stone, g);
+  box(4.3, 13.6, -5.6, -3.9, 17.0, 17.6, stone, g);
+
+  // ---- behind: the study keeps its walls but gets the same thin ochre lid, overhanging like the main roof ----
+  D.poly([[0.5, -3.2], [7.0, -3.2], [7.0, -1.0], [0.5, -1.0]], 8.45, .15, ochre, g);
 });
 
-design('murcutt', 'Glenn Murcutt', { skin: 'brick', render: 0x6d7174, frames: 0x3c4043, roof: true, bal: true,
-  note: 'Brick kept, light steel and timber on top. A thin zinc skillion roof floats over the terrace on slender posts, rows of adjustable aluminium louvres shade the main-floor glass, and timber screens sit on the west side. Almost no added load on the old brick: the best structural fit.' }, g => {
-  // floating skillion: high at the house, low at the terrace edge
-  const sk = new THREE.Mesh(new THREE.BoxGeometry(BW + 1.6, .08, PF + 1.8 - BD + .3), desMat.zinc);
-  sk.position.set(BW / 2, 8.2, (BD + PF + 1.8) / 2 - .15); sk.rotation.x = .1; sk.castShadow = true; g.add(sk);
-  for (const x of [-0.4, 3.0, 6.5, 10.0]) rod(V(x, 5.95, PF + 1.5), V(x, 7.98, PF + 1.5), .05, desMat.alu, g);
-  // louvre blades over the main-floor glass and the studio glass
-  for (const [y0, n] of [[5.6, 6], [2.7, 5]]) for (let i = 0; i < n; i++) box(EXr, BW + .1, y0 - i * .02, y0 - i * .02 + .03, PF + .15 + i * .17, PF + .45 + i * .17, desMat.alu, g);
-  for (let z = BD + .2; z < PF; z += .16) box(BW + .08, BW + .12, 2.95, 5.75, z, z + .07, desMat.timber, g);   // timber battens on the west face
+// ---- vision: seidler ----
+design('seidler', 'Harry Seidler', {
+  short: 'Seidler',
+  base: 'before',
+  brick: 0xfaf9f5,          // the face brick bagged and painted white: one set of crisp planes
+  white: 0xfaf9f5,          // projection walls and fibro, same white
+  frames: 0x2b2e30,         // dark frames, so the glass reads as voids in the white
+  roof: false,              // the tile hip roof goes; a curved roof replaces it
+  remove: [
+    [-0.45, 10.85, 8.25, 8.52, -0.45, 6.85],     // hip-roof fascia boards
+    [-0.6, 2.6, 1.85, 2.8, 5.9, 11.8],           // shade sail
+    [-0.6, -0.4, -0.1, 2.1, 11.5, 11.8],         // its pole
+    [0.6, 1.9, 0.8, 2.1, 6.3, 6.6],              // studio bed north window: opens into the new corner room
+    [-1.4, 10.45, -0.1, 0.01, 9.25, 11.8],       // old timber deck (front)
+    [10.35, 11.25, -0.1, 0.01, 9.25, 11.2],      // old deck (west return)
+    [-1.4, 2.65, -0.1, 0.01, 6.4, 9.35],         // old deck (east)
+    [9.55, 11.25, -0.1, 0.01, 7.3, 9.35],        // old deck (porch)
+    [-1.5, -1.2, -0.1, 1.1, 5.8, 11.9],          // tube railing, east run
+    [-1.5, 10.5, -0.1, 1.1, 11.5, 11.9],         // tube railing, front run
+    [10.3, 10.5, -0.1, 1.1, 11.1, 11.9],         // tube railing, return
+    [-1, 10.5, -6, -0.07, 11.5, 11.8],           // timber deck posts
+    [10.6, 12.1, 2.3, 3.1, 6.1, 6.5],            // west arch infill: the arch becomes a square opening
+    [-1.15, -0.2, 2.2, 2.7, 6.1, 6.5],           // east arch infill: same
+  ],
+  note: 'Seidler would find one geometric fact in this house and build everything from it: the glass projection sticks out 2.85 m, and the empty bay east of it is 2.84 m wide. So a quarter-circle centred on the corner where the projection meets the brick fills that bay exactly, and every curve in the scheme is drawn from that one centre: the new two-storey glass corner room, the sunshades that wrap it, and the terrace edge. The brick is bagged and painted white, the tile roof is replaced by a thin curved roof, and the two arches are squared off. Kept: the whole brick frame, the projection, the windows, the study and the entry. Removed: the tile roof, the old deck and rails, the shade sail, one small studio window (it now opens into the corner room). Sun: every sunshade is sized for this latitude. The roof sails out 1.0 m over the bedroom windows and curves up to the north, so midwinter sun (32.6 degrees) reaches the full height of the windows and a clerestory strip under the roof, while midsummer sun (79.5 degrees) is kept off all of them. The slabs over the living and studio glass project 0.9 m, which shades the glass completely at midsummer noon and lets midwinter sun onto all of the living glass and all but the top few centimetres of the studio glass. The west glass gets vertical aluminium fins against the afternoon sun. The terrace is a concrete slab on a sandstone base wall, with its curved east end cantilevering out unsupported.',
+}, g => {
+  const CX = PX, CZ = BD, R = PF - BD;               // the one centre and the one radius (2.85 m)
+  const A0 = Math.PI, A1 = Math.PI / 2;              // quadrant from the brick wall (east) round to the projection front (north)
+  const N = 28;
+  const arc = (r, a0 = A0, a1 = A1, n = N) => D.arc(CX, CZ, r, a0, a1, n);
+  const ring = (r1, r2, yTop, th, mat, a0 = A0, a1 = A1) => D.poly(arc(r2, a0, a1).concat(arc(r1, a1, a0)), yTop, th, mat, g);
+  const sector = (r, yTop, th, mat) => D.poly([[CX, CZ]].concat(arc(r)), yTop, th, mat, g);
+  const W = desMat.white, frame = M({ color: 0x2b2e30, roughness: .4, metalness: .3 });
+
+  // ---- the corner room: two storeys of curved glass in the empty east bay, bands continuing the projection's own lines ----
+  sector(R - .05, 2.98, .08, mats.floorMain || desMat.pale);   // main-level floor inside
+  ring(R - .28, R, 3.6, 1.35, W);                     // band: studio head to main sill (2.25-3.6), as on the projection
+  ring(R - .28, R, 6.2, .95, W);                      // band: main head to parapet (5.25-6.2)
+  sector(R - .05, 5.95, .15, W);                      // its roof, level with the projection roof
+  D.glass(arc(R - .12), 0.08, 2.17, g);               // studio glass
+  D.glass(arc(R - .12), 3.6, 1.65, g);                // main glass
+  for (let i = 0; i <= N; i += 4) { const [x, z] = arc(R - .1)[i];   // slender mullions
+    box(x - .025, x + .025, 0.05, 2.25, z - .025, z + .025, frame, g); box(x - .025, x + .025, 3.6, 5.25, z - .025, z + .025, frame, g); }
+
+  // ---- sunshades: horizontal slabs, 0.9 m, same depth straight and curved ----
+  const SH = .9;
+  for (const [yTop, th] of [[6.2, .2], [2.9, .15]]) {
+    ring(R, R + SH, yTop, th, W);                     // round the corner room
+    box(PX, BW, yTop - th, yTop, PF, PF + SH, W, g);  // along the projection front
+  }
+  // west glass: vertical aluminium fins on the projection's west side and the sunroom's west strip
+  for (let z = BD + .2; z < PF - .05; z += .38) box(BW + .08, BW + .48, 0.1, 5.8, z, z + .05, desMat.alu, g);
+  for (let z = 0.85; z < 6.3; z += .38) box(SW + .06, SW + .4, 6.3, 8.0, z, z + .05, desMat.alu, g);
+
+  // ---- roof: one thin curved plane over the brick body and the sunroom, low at the back, rising north to a 1.0 m eave ----
+  const z0 = -0.4, z1 = BD + 1.0, y0 = 8.58, rise = .85, Rr = ((z1 - z0) ** 2 + rise ** 2) / (2 * rise);
+  const yu = z => y0 + Rr - Math.sqrt(Rr * Rr - (z - z0) ** 2);     // underside of the roof at z
+  const rx1 = -0.45, rx2 = SW + .25;
+  const roofBand = (off, th, mat) => {
+    const sh = new THREE.Shape(), n = 24;
+    for (let i = 0; i <= n; i++) { const z = z0 + (z1 - z0) * i / n; i ? sh.lineTo(z, yu(z) + off) : sh.moveTo(z, yu(z) + off); }
+    for (let i = n; i >= 0; i--) { const z = z0 + (z1 - z0) * i / n; sh.lineTo(z, yu(z) + off + th); }
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: rx2 - rx1, bevelEnabled: false });
+    const m = new THREE.Mesh(geo, mat); m.rotation.y = -Math.PI / 2; m.position.x = rx2; m.castShadow = m.receiveShadow = true; g.add(m); return m;
+  };
+  roofBand(0, .16, W);                                // white soffit and edge
+  roofBand(.16, .03, desMat.zinc);                    // metal deck on top
+  // infill between the old wall tops and the curve: solid at the ends, a clerestory strip along the north
+  const endWall = (x, za, zb, yb) => { const sh = new THREE.Shape(), n = 12;
+    sh.moveTo(za, yb); sh.lineTo(zb, yb); for (let i = n; i >= 0; i--) { const z = za + (zb - za) * i / n; sh.lineTo(z, yu(z)); }
+    const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: T, bevelEnabled: false }), W); m.rotation.y = -Math.PI / 2; m.position.x = x + T; m.castShadow = true; g.add(m); };
+  endWall(0, 0, BD, 8.5);                             // east end over the brick
+  endWall(SW - T, 0.63, BD, 8.3);                     // west end over the sunroom
+  box(0, SW, 8.3, yu(0.6) + .02, 0.33, 0.63, W, g);   // low strip along the back
+  box(0, BW, 8.48, yu(0.05) + .02, -0.02, 0.28, W, g);
+  D.glass([[0, BD + .02], [SW, BD + .02]], 8.5, yu(BD) - 8.5, g);   // clerestory: winter sun deep into the bedrooms
+  box(BW, SW, 8.28, 8.5, BD - .2, BD + .02, W, g);    // sunroom head up to the clerestory line
+  for (let x = 0; x <= SW + .01; x += SW / 8) box(x - .03, x + .03, 8.5, yu(BD), BD - .02, BD + .06, frame, g);
+
+  // ---- terrace: concrete slab, its east end drawn from the same centre, on a sandstone base wall ----
+  const RT = 11.75 - CZ, zA = CZ + Math.sqrt(RT * RT - (CX + 1.35) ** 2), aE = Math.atan2(zA - CZ, -1.35 - CX);
+  const tArc = arc(RT, aE, A1, 18);
+  D.poly([[-1.35, 5.9]].concat(tArc, [[BW, 11.75], [BW, BD], [0, BD], [0, 5.9]]), 0.0, .28, desMat.pale, g);
+  // sandstone base under the straight edge only; the curved end is a pure cantilever
+  for (let x = PX + .4; x < BW - .2; x += 1.2) { const yb = Math.min(ground0(x, 11.1), ground0(x + 1.2, 11.1)) - .4;
+    box(x, Math.min(x + 1.2, BW - .2), yb, -.28, 10.9, 11.3, desMat.sandstone, g); }
+  // railing: white steel balusters, flat top rail, along the curve and the front
+  const rail = [[-1.35, 5.95]].concat(arc(RT - .06, aE, A1, 18), [[BW, 11.69]]);
+  D.battens(rail, 0, .95, .13, .02, .02, W, g);
+  D.wall(rail, .95, .05, .06, W, g);
 });
 
-design('kuma', 'Kengo Kuma', { skin: 'brick', render: 0x8a6a4a, frames: 0x3a3028, roof: true, bal: true,
-  note: 'A veil of thin vertical timber battens wrapped over the front, thicker where it shades, opening up at the doors and the view. All screen, no structure: light brackets off the existing walls. Upkeep is the cost, and on the north face the battens trade away some winter sun.' }, g => {
-  const bat = new THREE.BoxGeometry(.045, 1, .09), list = [];
-  const P = frontOutline(.35, EXr).slice(1, -1);   // along the front and round the corner
-  for (let i = 0; i < P.length - 1; i++) { const [x0, z0] = P[i], [x1, z1] = P[i + 1], L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / .13));
-    for (let k = 0; k < n; k++) { const t = (k + .5) / n, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t, gap = (k * 7 + i * 3) % 11 === 0;
-      if (!gap) list.push([x, z, 0.05, 5.85]); } }
-  for (let x = -0.2; x < BW; x += .13) if (Math.floor(x / .13) % 9 > 1) list.push([x, BD + .35, 5.95, 8.3]);   // upper floor, gaps at the doors
-  const im = new THREE.InstancedMesh(bat, desMat.timber, list.length), d = new THREE.Object3D();
-  list.forEach(([x, z, y1, y2], i) => { d.position.set(x, (y1 + y2) / 2, z); d.scale.set(1, y2 - y1, 1); d.rotation.y = 0; d.updateMatrix(); im.setMatrixAt(i, d.matrix); });
-  im.castShadow = true; g.add(im);
-  box(-0.6, BW + .6, 5.85, 5.97, BD, PF + .5, desMat.timber, g);   // timber soffit band at the terrace edge
+// ---- vision: murcutt ----
+design('murcutt', 'Glenn Murcutt', {
+  base: 'before',
+  brick: 'keep',
+  white: 'keep',
+  frames: 0x9a9fa1,
+  roof: false,
+  remove: [
+    [-0.55, 2.6, 1.88, 2.8, 6.45, 11.75],    // the shade sail
+    [-0.6, -0.4, -0.1, 2.05, 11.05, 11.25],  // its post
+    [-0.4, 10.85, 8.25, 8.55, -0.4, 6.85],   // the timber fascia ring of the old hip roof
+  ],
+  note: 'The brick house stays: three storeys of heavy face brick are thermal mass, cool in summer and holding winter warmth, and every wall, window, floor and the glass projection are kept. Three things go: the dark shade sail, the terracotta tiles and their timber fascia. In their place one curved corrugated-iron roof is lifted over the brick on slim steel posts, low at the back and rising to the north. Under its high north edge a strip of glass about 0.9 m tall runs the full width above the bedroom windows, so winter sun reaches deep into the upper floor and hot air can be let out at the top. The roof oversails the north wall by 0.9 m, which shades the bedroom windows at midsummer (79.5°) and lets the midwinter sun (32.6°) onto the whole window and most of the clerestory. Gutters on both edges are sized to collect the rain. On the old deck a thin galvanised steel frame stands 0.95 m in front of the glass projection. It carries two bands of fixed aluminium blades, at the main-floor line and the roof line, so the living glass is fully shaded in summer and fully sunlit at midwinter noon. The same 0.95 m blades run off the brick at the east end. Vertical hardwood battens cover the projection\'s west glass and the sunroom\'s west window strip, against the low afternoon sun. On the garden above the pool, behind the sandstone rock face (left as it is), stands a separate one-room pavilion, 6.1 m by 2.8 m, raised on thin steel stumps and entered off the existing carport stair. Its floor is level with the high edge of the new house roof, so it looks across the pool and over the new roof to the north. The same curved roof rises to the north over a fully glazed north wall with a 1 m eave and a sliding hardwood batten screen. The south wall is corrugated iron with a high strip of glass for cross-ventilation. The west end is an open verandah behind battens. Its rain runs to a corrugated tank behind it.',
+}, g => {
+  const steel = desMat.steel, blade = desMat.alu, tim = desMat.timber;
+  const corr = desMat.corr.clone(); corr.map = desMat.corr.map.clone(); corr.map.wrapS = corr.map.wrapT = THREE.RepeatWrapping; corr.map.repeat.set(5, 1); corr.map.needsUpdate = true;
+
+  // ---------- HOUSE: a sun-control layer, nothing taken away ----------
+  // steel frame on the old deck, 0.95 m in front of the projection glass
+  const ZF = PF + .95, postsX = [PX + .1, 5.35, 7.85, BW - .1];
+  for (const x of postsX) rod(V(x, 0, ZF - .05), V(x, 6.02, ZF - .05), .05, steel, g);
+  const band = (x1, x2, y, z0, z1, arms) => {
+    box(x1, x2, y - .1, y + .03, z1 - .07, z1, steel, g);                    // edge beam
+    for (let z = z0 + .06; z < z1 - .1; z += .16) box(x1, x2, y - .04, y - .01, z, z + .11, blade, g);   // blades
+    for (const x of arms) box(x - .03, x + .03, y - .1, y + .03, z0, z1, steel, g);   // arms back to the house
+  };
+  band(PX, BW, 5.95, PF, ZF, postsX);      // roof-line band: shades the main living glass
+  band(PX, BW, 3.0, PF, ZF, postsX);       // floor-line band: shades the studio glass
+  // east end: the same blades cantilevered off the brick
+  band(-.05, PX, 5.95, BD, BD + .95, [0.05, 1.45, PX - .05]);
+  band(-.05, PX, 3.0, BD, BD + .95, [0.05, 1.45, PX - .05]);
+  // west battens: projection west glass, and the sunroom's west window strip
+  D.battens([[BW + .16, BD + .05], [BW + .16, ZF - .1]], 0.05, 5.85, .15, .045, .12, tim, g);
+  box(BW + .1, BW + .22, 5.85, 5.95, BD, ZF - .05, steel, g);
+  D.battens([[SW + .12, 0.7], [SW + .12, BD - .05]], 5.95, 8.22, .15, .045, .12, tim, g);
+  box(SW + .06, SW + .18, 8.22, 8.3, 0.65, BD, steel, g);
+  box(SW + .06, SW + .18, 5.87, 5.95, 0.65, BD, steel, g);
+  // new roof: the tiles come off and one curved corrugated roof is lifted over the brick, low to the south, rising to a
+  // glazed clerestory on the north and oversailing the bedroom windows by 0.9 m
+  const hY = z => 8.62 + .93 * Math.pow(Math.max(0, (z + .6) / 7.95), 1.5), HX1 = -.45, HX2 = SW + .3, HZ1 = -.6, HZ2 = BD + .9;
+  for (let i = 0; i < 10; i++) { const z1 = HZ1 + (HZ2 - HZ1) * i / 10, z2 = HZ1 + (HZ2 - HZ1) * (i + 1) / 10; D.roofPlane(HX1, HX2, z1, z2, hY(z1), hY(z2), .06, corr, g); }
+  box(HX1, HX2, hY(HZ2) - .18, hY(HZ2) + .02, HZ2 - .02, HZ2 + .14, steel, g);   // north gutter
+  box(HX1, HX2, hY(HZ1) - .18, hY(HZ1) + .02, HZ1 - .14, HZ1 + .02, steel, g);   // south gutter
+  // north clerestory: glass between the brick wall head and the roof, slim steel mullions carrying the roof
+  D.glass([[0, BD + .02], [SW, BD + .02]], 8.5, hY(BD) - 8.55, g);
+  box(BW, SW, 8.3, 8.5, BD - .02, BD + .04, steel, g);
+  for (let x = 0; x <= SW + .01; x += SW / 9) box(x - .03, x + .03, 8.3, hY(BD + .05), BD - .02, BD + .06, steel, g);
+  box(-.02, SW + .02, 8.42, 8.52, BD - .02, BD + .08, steel, g);
+  // ends of the roof void: corrugated infill
+  for (let i = 0; i < 16; i++) { const z1 = i * BD / 16, z2 = (i + 1) * BD / 16; box(-.06, 0, 8.5, hY((z1 + z2) / 2), z1, z2, corr, g); }
+  for (let i = 0; i < 14; i++) { const z1 = .63 + i * (BD - .63) / 14, z2 = .63 + (i + 1) * (BD - .63) / 14; box(SW, SW + .06, 8.3, hY((z1 + z2) / 2), z1, z2, corr, g); }
+  box(BW, SW, 8.3, hY(.7), .57, .63, corr, g);
+  box(0, BW, 8.5, hY(0) + .02, -.06, 0, corr, g);
+
+  // ---------- PAVILION on the high garden south of the pool ----------
+  // set behind the sandstone rock face that edges the pool (the rock is left untouched), clear of the tree, entered off the carport stair
+  const X1 = 3.3, X2 = 9.4, XV = 7.9, ZS = -16.2, ZG = -13.8, ZN = -13.4, FY = 9.55;
+  const za = ZS - .3, zb = ZG + 1.0, YS = FY + 2.3;
+  const roofY = z => YS + .7 * Math.pow(Math.max(0, (z - za) / (zb - za)), 1.6);
+  // floor: hardwood deck on a steel frame, lifted off the ground on thin stumps
+  box(X1, X2, FY - .08, FY, ZS, ZN, tim, g);
+  box(X1 + .1, X2 - .1, FY - .26, FY - .08, ZS + .1, ZN - .1, steel, g);
+  for (const x of [X1 + .4, 5.4, 7.4, X2 - .4]) for (const z of [ZS + .3, ZN - .3]) rod(V(x, 8.5, z), V(x, FY - .26, z), .05, steel, g);
+  box(X1 - .9, X1, FY - .3, FY - .22, -15.3, -14.4, tim, g);   // step across from the stair landing
+  // columns
+  for (const x of [X1 + .05, 5.3, XV, X2 - .05]) {
+    rod(V(x, FY, ZG + .1), V(x, roofY(ZG + .1) - .05, ZG + .1), .045, steel, g);
+    rod(V(x, FY, ZS + .05), V(x, roofY(ZS + .05) - .05, ZS + .05), .045, steel, g);
+  }
+  // curved corrugated roof, rising to the north, 1 m past the glass
+  for (let i = 0; i < 10; i++) { const z1 = za + (zb - za) * i / 10, z2 = za + (zb - za) * (i + 1) / 10; D.roofPlane(X1 - .3, X2 + .3, z1, z2, roofY(z1), roofY(z2), .05, corr, g); }
+  box(X1 - .3, X2 + .3, roofY(zb) - .16, roofY(zb) + .02, zb - .02, zb + .14, steel, g);   // north gutter
+  box(X1 - .3, X2 + .3, roofY(za) - .16, roofY(za) + .02, za - .14, za + .02, steel, g);   // south gutter
+  // north wall: glass full height, slim steel mullions
+  D.glass([[X1 + .05, ZG], [XV, ZG]], FY, roofY(ZG) - FY - .08, g);
+  for (let i = 0; i <= 4; i++) { const x = X1 + .05 + (XV - X1 - .05) * i / 4; box(x - .025, x + .025, FY, roofY(ZG) - .06, ZG - .03, ZG + .03, steel, g); }
+  // sliding hardwood batten screen on a track outside the glass, parked at the east end
+  box(X1, X2, roofY(ZG + .2) - .12, roofY(ZG + .2) - .06, ZG + .15, ZG + .25, steel, g);
+  D.battens([[X1 + .1, ZG + .2], [X1 + 2.0, ZG + .2]], FY + .02, roofY(ZG + .2) - .12, .11, .07, .035, tim, g);
+  // south wall: corrugated iron to door-head height, a strip of glass above for cross-ventilation
+  box(X1, X2, FY, FY + 1.75, ZS - .02, ZS + .04, corr, g);
+  D.glass([[X1, ZS + .01], [X2, ZS + .01]], FY + 1.75, roofY(ZS) - FY - 1.8, g);
+  // east end solid; glass wall to the open west verandah; battens on the west edge
+  box(X1, X1 + .06, FY, roofY(ZS) - .02, ZS, ZG, corr, g);
+  D.glass([[XV, ZS], [XV, ZG]], FY, roofY(ZS) - FY - .05, g);
+  D.battens([[X2 - .05, ZS + .05], [X2 - .05, ZN]], FY, YS - .1, .14, .12, .045, tim, g);
+  box(X2 - .1, X2, YS - .1, YS, ZS, ZN, steel, g);
+  // rainwater tank behind the east end
+  rod(V(4.4, roofY(za) - .1, za - .08), V(4.4, 10.95, za - .08), .05, steel, g);
+  rod(V(4.4, 9.0, -17.3), V(4.4, 10.95, -17.3), .6, corr, g);
 });
 
-design('sun', 'Sun Planes on Brick (settled design)', { skin: 'brickAll', render: 0xe8e2d4, frames: 0x4a3a2c, roof: true, bal: false,
-  note: 'The settled design. Brick everywhere and no charcoal bands. Thin pale sunshade planes project 0.9 m over the north glass at both floors and run round the curve (full winter sun, summer glass shaded). Frameless glass balustrade, bronze louvres on the west glass, solar panels on the north roof face (about 3.5 kW shown; the east and west hips take it to about 6.6 kW). All within the After\'s scale of work.' }, g => {
-  frontSlab(6.0, .2, .9, desMat.pale, g);
-  frontSlab(2.98, .12, .85, desMat.pale, g);
-  frontUpstand(6.0, 1.0, .82, .025, desMat.glassRail, g);
+// ---- vision: kuma ----
+design('kuma', 'Kengo Kuma', {
+  base: 'before',
+  brick: 'keep',
+  white: 0xb39572,          // projection fascias, sunroom and study fibro re-clad in cedar boards
+  frames: 0x4a3f33,         // dark bronze frames
+  roof: true,
+  remove: [   // (the deck, sail and front garden sit in the model's front frame, 0.55 m north of their source coordinates)
+    [-1.5, 10.5, -0.1, 1.2, 9.9, 11.85],    // old tube railing along the deck front and its west return
+    [-1.5, -1.2, -0.1, 1.2, 6.3, 11.85],    // old tube railing up the east side of the deck
+    [-0.55, 2.6, 1.85, 2.8, 6.4, 11.75],    // shade sail
+    [-0.6, -0.4, -0.1, 2.1, 11.5, 11.85],   // shade-sail pole
+    [PX - .01, BW + .01, 5.94, 6.21, PF - .16, PF + .01],   // white parapet on the projection roof (the new eave takes its place)
+    [10.3, 11.7, -3.2, 1.0, 11.1, 15.05],   // concrete flight up the west side of the deck and its tube rails (replaced by the cedar steps)
+  ],
+  note: 'Kuma would not hide this brick house behind a new object. He would leave the brick and the tile roof alone and make the edges porous with small pieces of cedar, so the house thins out into the trees and the slope. Kept: the whole brick body, the hip roof, the glass projection, the entry tower and the deck frame. Removed: the tube railings, the shade sail, the white parapet, and the concrete flight of steps up the west side of the deck. Added: (1) thin layered eaves, cedar sticks corbelled out in steps under a thin zinc plate, 1.0 m deep over the living glass, 0.9 m over the studio glass and 0.85 m over the bedroom windows. Midwinter noon sun (32.6 degrees) reaches the full height of every north window; midsummer sun (79.5 degrees) stays off the glass. (2) In the empty east corner, a two-storey open-air cedar lattice room that completes the projection as a frame of sticks. Its east face is open at deck level and close-spaced above, against the apartment block and the morning glare. Its north face is just posts and a fine top valance, so the kitchen and studio-bedroom windows still get the winter sun. A deciduous native white cedar grows up through its lattice roof: shade in summer, bare in winter. (3) Angled cedar fins on the west glass and the sunroom window strip, turned to cut the low west sun and leave the north-west view open. (4) The deck re-boarded with fine cedar balusters, and broad cedar steps down to the street path that climb around the trunk of the big gum, in place of the concrete flight. (5) A sedum roof on the projection, seen from the bedrooms. (6) At the back, a stick pergola over the stone terrace, its roof level with the pool edge. The fibro on the sunroom and study is re-clad in cedar boards.',
+}, g => {
+  const cedar = M({ color: 0xb79470, roughness: .85 });
+  const plate = desMat.zinc;
+  const DZ = 11.75, gnd = (x, z) => ground0(x, z - .55);   // deck front edge; ground in the model's front frame
+  let sd = 4242; const rr = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+  const sedum = M({ color: 0x7f8d5e, roughness: .95 });
+  // instanced sticks: [cx, cy, cz, sx, sy, sz, rotY]
+  const lists = new Map();
+  const put = (mat, cx, cy, cz, sx, sy, sz, ry = 0) => { if (!lists.has(mat)) lists.set(mat, []); lists.get(mat).push([cx, cy, cz, sx, sy, sz, ry]); };
+  const S = (x1, x2, y1, y2, z1, z2, mat = cedar) => put(mat, (x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2, x2 - x1, y2 - y1, z2 - z1);
+  const flush = () => { const o = new THREE.Object3D();
+    for (const [mat, L] of lists) { const im = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), mat, L.length);
+      L.forEach(([x, y, z, sx, sy, sz, ry], i) => { o.position.set(x, y, z); o.scale.set(sx, sy, sz); o.rotation.set(0, ry, 0); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
+      im.castShadow = im.receiveShadow = true; g.add(im); } };
+
+  // ---- 1. layered eaves (hisashi): sticks corbelled out in steps, fine slats, a thin bronze plate on top ----
+  function hisashi(x1, x2, zFace, yTop, depth, layers, step = .6) {
+    const h = .1;
+    for (let x = x1 + .12; x < x2 - .05; x += step) for (let k = 0; k < layers; k++) {
+      const y0 = yTop - (layers - k) * h, tip = zFace + depth * (k + 1.4) / (layers + .6);
+      S(x - .035, x + .035, y0, y0 + h - .01, zFace, Math.min(tip, zFace + depth - .05));
+    }
+    for (let z = zFace + .06; z < zFace + depth; z += .1) S(x1, x2, yTop, yTop + .045, z, z + .045);
+    S(x1, x2, yTop + .045, yTop + .065, zFace, zFace + depth + .02, plate);
+  }
+  hisashi(-1.35, BW + .45, PF, 5.93, 1.0, 4);          // over the living glass (head 5.25): winter sun clears it, summer sun doesn't
+  hisashi(-1.35, BW + .45, PF + .05, 2.84, .9, 3);     // over the studio glass (head 2.25)
+  hisashi(-.35, SW + .2, BD + .35, 8.44, .5, 2);       // tile eave already gives 0.35 m: the fringe takes the bedroom windows to 0.85 m
+  // west return of the upper eave, carrying the fins
+  for (let z = BD + .1; z < PF + 1; z += .1) S(BW, BW + .45, 5.93, 5.975, z, z + .045);
+  S(BW, BW + .45, 5.975, 5.995, BD, PF + 1.02, plate);
+
+  // ---- 2. the east corner: a two-storey cedar lattice room that completes the projection as a ghost of sticks ----
+  const X0 = -1.35, X1 = PX, Z0 = BD, Z1 = PF, YT = 5.95, w = .075;
+  // east face (apartment block, morning glare): verticals outside, horizontals just inside
+  for (let z = Z0 + .15; z <= Z1 + .01; z += .3) S(X0 - w, X0, 0, YT, z - w / 2, z + w / 2);
+  for (let y = .45; y < YT - .1; y += y < 2.9 ? .45 : .15) S(X0, X0 + w, y - w / 2, y + w / 2, Z0, Z1);   // graded: open at deck level for the breeze, close above it where the apartment windows look in
+  // north face, open (winter sun to the kitchen and studio-bedroom windows): posts at 1.2 m, a fine valance at the top for summer
+  for (let x = X0; x <= X1 + .01; x += (X1 - X0) / 4) S(x - w / 2, x + w / 2, 0, YT, Z1 - w, Z1);
+  for (let y = 5.15; y < 5.8; y += .13) S(X0, X1, y, y + .045, Z1 - w - .05, Z1 - .05);
+  // roof lattice: two layers crossing, dappled light
+  for (let z = Z0 + .2; z < Z1; z += .25) S(X0, X1, YT - .07, YT, z, z + .05);
+  for (let x = X0 + .3; x < X1; x += .6) S(x, x + .05, YT - .14, YT - .07, Z0, Z1);
+  // back corner posts against the brick and a light mid rail at the main-floor line
+  S(X0 - w, X0, 0, YT, Z0, Z0 + w); S(X1 - w, X1, 2.9, YT, Z0 + .3, Z0 + .3 + w);
+
+  // a deciduous native white cedar (Melia azedarach) planted through the deck inside the lattice room: leaf shade in summer, bare branches in winter
+  { const tx = .5, tz = 8.0, leaf = M({ color: 0x8fa35a, roughness: .9 });
+    box(tx - .45, tx + .45, .03, .07, tz - .45, tz + .45, cedar, g);
+    rod(V(tx, gnd(tx, tz), tz), V(tx + .2, 4.6, tz - .1), .13, mats.trunk, g);
+    for (const [dx, dy, dz] of [[-1.0, 1.6, .6], [1.1, 1.8, -.4], [.2, 2.4, .9], [-.6, 2.2, -.8]]) rod(V(tx + .2, 4.6, tz - .1), V(tx + .2 + dx, 4.6 + dy, tz - .1 + dz), .06, mats.trunk, g);
+    for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.55 + rr() * .4, 0), leaf);
+      m.position.set(tx + (rr() - .5) * 2.6, 5.6 + rr() * 1.6, tz + (rr() - .5) * 2.2); m.castShadow = true; g.add(m); } }
+
+  // ---- 3. angled cedar fins on the west glass and the sunroom (block low west sun, keep the north-west view) ----
+  const fin = (x, z, y1, y2, d, ang) => put(cedar, x, (y1 + y2) / 2, z, d, y2 - y1, .035, ang);
+  for (let z = BD + .2; z < PF - .05; z += .17) fin(BW + .22, z, 2.95, 5.93, .24, -.7);
+  S(BW + .05, BW + .4, 2.92, 2.97, BD, PF, plate);
+  for (let z = .78; z < BD; z += .15) fin(SW + .2, z, 5.78, 8.3, .24, -.7);
+  S(SW + .05, SW + .36, 8.3, 8.34, .63, BD, plate); S(SW + .05, SW + .36, 5.74, 5.78, .63, BD, plate);
+
+  // ---- 4. deck re-boarded, fine balusters, broad steps down to a platform around the gum (front frame: deck edge Z 11.75, gum at Z 13.55) ----
+  box(-1.35, BW, 0, .03, PF, DZ, mats.deckNew, g); box(BW, 11.2, 0, .03, PF, 11.15, mats.deckNew, g);
+  box(-1.35, PX, 0, .03, BD, PF, mats.deckNew, g); box(BW, 11.2, 0, .03, 7.35, PF, mats.deckNew, g);
+  const rail = (pts, y) => { D.battens(pts, y, y + 1.0, .11, .03, .03, cedar, g);
+    for (let i = 0; i < pts.length - 1; i++) { const [xa, za] = pts[i], [xb, zb] = pts[i + 1];
+      S(Math.min(xa, xb) - .03, Math.max(xa, xb) + .03, y + 1.0, y + 1.05, Math.min(za, zb) - .03, Math.max(za, zb) + .03); } };
+  rail([[X0, Z1], [X0, DZ], [6.4, DZ]], .03);
+  // the concrete flight with tube rails up the west side is replaced by broad cedar steps from the deck down to the street path,
+  // climbing round the gum trunk (X 9.9, Z 13.55); every step is under 1 m above the ground, so no balustrade, one handrail
+  const SX = 6.4, SE = 11.6, n = 9, run = 3.2 / n;
+  box(BW, SE, 0, .03, 11.15, DZ, mats.deckNew, g);
+  for (let i = 1; i <= n; i++) { const y = -.3 * i, z = DZ + run * (i - 1), z2 = z + run + .02;
+    const cut = z2 > 13.18 && z < 13.92;             // leave the trunk free
+    for (const [xa, xb] of cut ? [[SX, 9.52], [10.28, SE]] : [[SX, SE]]) { box(xa, xb, y - .06, y, z, z2, mats.deckNew, g); S(xa, xb, y - .3, y - .06, z2 - .06, z2 - .02); } }
+  for (const x of [SX + .15, 8.6, SE - .15]) for (let i = 2; i <= n; i += 3) { const z = DZ + run * (i - .5); S(x - .04, x + .04, gnd(x, z) - .3, -.3 * i - .06, z - .04, z + .04); }
+  for (let i = 0; i <= n; i += 3) { const z = DZ + run * i + .1; S(SE - .07, SE - .03, -.3 * i, -.3 * i + .95, z - .02, z + .02); }
+  rod(V(SE - .05, .95, DZ + .1), V(SE - .05, -.3 * n + .95, DZ + run * n + .1), .025, cedar, g);
+
+  // ---- 5. sedum roof on the projection ----
+  box(PX + .12, BW - .12, 5.95, 6.04, BD + .08, PF - .08, sedum, g);
+
+  // ---- 6. back: a floating stick pergola over the stone terrace, its roof level with the pool edge ----
+  const TY = 5.8, RY = 8.2;
+  for (const [x, z] of [[6.95, -3.65], [10.15, -3.65], [6.95, -5.85], [10.15, -5.85]]) S(x - .05, x + .05, TY, RY, z - .05, z + .05);
+  S(6.75, 10.35, RY - .12, RY, -3.7, -3.6); S(6.75, 10.35, RY - .12, RY, -5.9, -5.8);
+  for (let x = 6.55; x < 10.6; x += .18) S(x, x + .045, RY, RY + .06, -6.0, -3.35);
+  for (let z = -5.95; z < -3.3; z += .3) S(6.4, 10.75, RY + .06, RY + .12, z, z + .045);
+
+  flush();
+});
+
+// ---- vision: sun ----
+design('sun', 'Yours, refined: Sun Planes on Brick', { short: 'Yours, refined', base: 'after', afterSkin: 'brickAll', frames: 0x4a3a2c, roof: true, bal: false,
+  note: 'Your After with what three independent reviewers (structure, sun, architecture) agreed on. Brick everywhere and no charcoal bands. Thin pale sunshade planes 0.9 m deep over the north glass at both floors, carried round your curve, so the glass gets full sun at midwinter noon and is shaded at midsummer. A frameless glass balustrade instead of the picket rail. Bronze louvres on the west glass. Solar panels on the north roof face (about 3.5 kW shown; the east and west hips take it to about 6.6 kW).' }, g => {
+  D.poly(frontOutline(.9), 6.0, .2, desMat.pale, g);
+  D.poly(frontOutline(.85), 2.98, .12, desMat.pale, g);
+  D.wall(frontOutline(.82).slice(0, -1).concat([[-.82, BD]]), 6.0, 1.0, .025, desMat.glassRail, g);
   for (let z = BD + .2; z < PF - .1; z += .22) box(BW + .06, BW + .16, 3.0, 5.7, z, z + .12, desMat.bronze, g);   // west louvres
-  // solar panels on the north face of the hip roof (12° pitch)
   const pitch = Math.atan2(.75, (BD + .7) / 2), eave = BD + .35;
   for (const [zc, xs] of [[6.2, [1.0, 2.75, 4.5, 6.25, 8.0]], [5.15, [2.75, 4.5, 6.25]]]) for (const x of xs) {
     const p = new THREE.Mesh(new THREE.BoxGeometry(1.7, .04, 1.0), desMat.pv);
     p.position.set(x + .85, 8.5 + (eave - zc) * Math.tan(pitch) + .07, zc); p.rotation.x = pitch; p.castShadow = true; g.add(p); }
 });
 
-var desOn = '', balMem = null;   // var: setState() calls designOff() during start-up, before this line runs
-const MAT0 = { render: { c: mats.render.color.getHex(), map: mats.render.map, r: mats.render.roughness, m: mats.render.metalness }, fU: mats.fUpper.color.getHex(), fL: mats.fLower.color.getHex() };
+// ---- switching between visions ----
+var desOn = '';   // var: setState() calls designOff() during start-up, before this line runs
+const MAT0 = { c: mats.render.color.getHex(), map: mats.render.map, r: mats.render.roughness, m: mats.render.metalness };
+const boxOf = o => new THREE.Box3().setFromObject(o);
+function regionMeshes(regions, roots) {   // original meshes lying entirely inside any region
+  const out = []; if (!regions || !regions.length) return out;
+  for (const root of roots) root.traverse(o => { if (!o.isMesh || o.userData.isDepthPre) return; let p = o; while (p) { if (p === DES_GRP) return; p = p.parent; }
+    const bb = boxOf(o); if (regions.some(([x1, x2, y1, y2, z1, z2]) => bb.min.x >= x1 && bb.max.x <= x2 && bb.min.y >= y1 && bb.max.y <= y2 && bb.min.z >= z1 && bb.max.z <= z2)) out.push(o); });
+  return out;
+}
 function designOff() {
   if (!desOn) return; const d = DES[desOn]; d.g.visible = false; desOn = '';
-  Object.assign(mats.render, { map: MAT0.render.map, roughness: MAT0.render.r, metalness: MAT0.render.m }); mats.render.needsUpdate = true;
-  houseRoof.forEach(o => o.visible = true); if (balMem) { balBig.visible = balMem[0]; balJul.visible = balMem[1]; balMem = null; }
-  document.querySelectorAll('#desRow button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.d === ''))); $('desNote').hidden = true;
+  if (d.hidden) d.hidden.forEach(o => o.visible = true);
+  Object.assign(mats.render, { map: MAT0.map, roughness: MAT0.r, metalness: MAT0.m }); mats.render.needsUpdate = true;
+  houseRoof.forEach(o => o.visible = true);
+  if (d.balMem) { balBig.visible = d.balMem[0]; balJul.visible = d.balMem[1]; d.balMem = null; }
+  document.querySelectorAll('#desRow button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.d === '' && S.state === 'after')));
+  $('desNote').hidden = true;
 }
 function setDesign(k) {
-  if (!k || k === desOn) { designOff(); setState(S.state); return; }
-  designOff(); setState('after'); balMem = [balBig.visible, balJul.visible]; desOn = k; const d = DES[k]; d.g.visible = true;
-  // skin: brick kept on brick shells, everything else in the design's render
-  for (const m of skinned) m.material = d.skin === 'brickAll' ? mats.brick : (d.skin === 'brick' && m.userData.skin === 'brick' ? mats.brick : mats.render);
-  after.traverse(o => { if (o.userData.skin === 'brick' && Array.isArray(o.material)) o.material = o.material.map(x => (x === mats.render || x === mats.brick) ? (d.skin === 'render' ? mats.render : mats.brick) : x); });
-  mats.render.color.setHex(d.render); mats.render.roughness = d.rough ?? .85; mats.render.metalness = d.metal ?? 0;
-  mats.render.map = d.map === 'conc' ? desMat.conc.map : MAT0.render.map; mats.render.needsUpdate = true;
-  mats.fUpper.color.setHex(d.frames); mats.fLower.color.setHex(d.frames);
-  houseRoof.forEach(o => o.visible = d.roof); balBig.visible = d.bal; balJul.visible = false;
+  if (!k || !DES[k]) { designOff(); setState('after'); document.querySelectorAll('#desRow button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.d === ''))); return; }
+  designOff(); const d = DES[k];
+  setState(d.base === 'after' ? 'after' : 'before');
+  desOn = k; d.g.visible = true;
+  if (d.base === 'after') {
+    d.balMem = [balBig.visible, balJul.visible];
+    for (const m of skinned) m.material = d.afterSkin === 'brickAll' ? mats.brick : (m.userData.skin === 'brick' ? mats.brick : mats.render);
+    after.traverse(o => { if (o.userData.skin === 'brick' && Array.isArray(o.material)) o.material = o.material.map(x => (x === mats.render || x === mats.brick) ? mats.brick : x); });
+    if (d.bal === false) { balBig.visible = false; balJul.visible = false; }
+  } else {
+    // original house, re-skinned only where the vision says so
+    const B = d.brick ?? 'keep', Wt = d.white ?? 'keep';
+    for (const m of skinned) { const s = m.userData.skin; m.material = s === 'brick' ? (B === 'keep' ? mats.brick : mats.render) : (s === 'white' || s === 'clad') ? (Wt === 'keep' ? mats[s] : skin2) : mats[s]; }
+    before.traverse(o => { if (o.userData.skin === 'brick' && Array.isArray(o.material)) o.material = o.material.map(x => (x === mats.render || x === mats.brick) ? (B === 'keep' ? mats.brick : mats.render) : x); });
+    if (B !== 'keep') mats.render.color.setHex(B);
+    if (Wt !== 'keep') skin2.color.setHex(Wt);
+    mats.render.roughness = d.rough ?? .85; mats.render.metalness = d.metal ?? 0; mats.render.map = d.map === 'conc' ? desMat.conc.map : MAT0.map; mats.render.needsUpdate = true;
+  }
+  if (d.frames !== undefined) { mats.fUpper.color.setHex(d.frames); mats.fLower.color.setHex(d.frames); }
+  houseRoof.forEach(o => o.visible = d.roof !== false);
+  d.hidden = regionMeshes(d.remove, d.base === 'after' ? [common, after] : [common, before]); d.hidden.forEach(o => o.visible = false);
   document.querySelectorAll('#desRow button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.d === k)));
-  $('badge').textContent = 'Inspired: ' + d.name; $('badge').className = 'badge after';
-  $('desNote').textContent = d.note; $('desNote').hidden = false;
+  $('badge').textContent = d.name; $('badge').className = 'badge after';
+  $('desNote').textContent = d.note || ''; $('desNote').hidden = !d.note;
 }
 { const row = $('desRow');
-  { const b = document.createElement('button'); b.className = 'btn'; b.dataset.d = ''; b.textContent = 'Default'; b.title = 'Your own design, no inspired layer';
-    b.setAttribute('aria-pressed', 'true'); b.addEventListener('click', () => setDesign('')); row.appendChild(b); }
-  for (const [k, d] of Object.entries(DES)) { const b = document.createElement('button'); b.className = 'btn'; b.dataset.d = k; b.textContent = d.name.replace(' (settled design)', ''); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => setDesign(desOn === k ? '' : k)); row.appendChild(b); }
+  const add = (k, label, title) => { const b = document.createElement('button'); b.className = 'btn'; b.dataset.d = k; b.textContent = label; if (title) b.title = title;
+    b.setAttribute('aria-pressed', String(k === '')); b.addEventListener('click', () => setDesign(k)); row.appendChild(b); };
+  add('', 'Yours', 'Your After design');
+  for (const [k, d] of Object.entries(DES)) add(k, d.base === 'after' ? (d.short || d.name) : d.name.replace(/[:(].*/, '').replace(/\s+Architects\s*$/, '').trim().split(' ').pop(), d.name);
 }
-window.homerDesign = setDesign;
-
-// ---------- extension options (After only): the architects' takes on the extension ----------
-// Sun rule for all of them: nothing projects north of the glazed front line, except eaves of about 1 m that shade summer sun only.
-const EXT = {}, EXT_GRP = new THREE.Group(); after.add(EXT_GRP);   // parented to the After, so they only show in the After
-const exM = {
-  corr: M({ map: canvasTex(128, 128, (g, w, h) => { for (let x = 0; x < w; x++) { const v = 150 + 55 * Math.sin(x / w * Math.PI * 16); g.fillStyle = `rgb(${v | 0},${v + 3 | 0},${v + 6 | 0})`; g.fillRect(x, 0, 1, h); } }, 1), roughness: .4, metalness: .35 }),
-  ply: M({ color: 0xc9a77a, roughness: .8 }),
-  chain: M({ map: canvasTex(64, 64, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(170,175,178,1)'; g.lineWidth = 2; for (let i = -w; i < w * 2; i += 10) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + h, h); g.stroke(); g.beginPath(); g.moveTo(i + h, 0); g.lineTo(i, h); g.stroke(); } }, 6), transparent: true, alphaTest: .3, side: THREE.DoubleSide }),
-  timberEdge: new THREE.LineBasicMaterial({ color: 0x9a6b3c }),
-  stone: M({ color: 0xc6a77a, roughness: .95 }), pale: M({ color: 0xe8e2d4, roughness: .8 }), bronze: M({ color: 0x4a3a2c, roughness: .45, metalness: .5 }),
-  white: M({ color: 0xf6f5f2, roughness: .22 }), zinc: M({ color: 0xc4c9cb, roughness: .4, metalness: .3, side: THREE.DoubleSide }),
-  alu: M({ color: 0xb8bcbd, roughness: .4, metalness: .6 }), timber: M({ color: 0xb98a5a, roughness: .75 }),
-};
-exM.chain.map.repeat.set(6, 6);
-// the After's own extension shell (walls, glass, mullions round the rounded corner), hidden by options that replace it
-const extShell = [];
-after.traverse(o => {
-  if (!o.isMesh || ![mats.glass, mats.render, mats.fUpper].includes(o.material)) return;
-  const bb = new THREE.Box3().setFromObject(o), c = bb.getCenter(new THREE.Vector3());
-  if (bb.min.y < -0.2 || bb.max.y > 5.9 || c.x > 2.95 || c.z < 6.3 || c.z > 9.5) return;
-  const onEast = c.x < .25, onFront = c.z > 9.05, onCurve = c.x < 1.5 && c.z > 7.9 && Math.hypot(c.x - EXr, c.z - (PF - EXr)) > .9;
-  if (onEast || onFront || onCurve) extShell.push(o);
-});
-function extOpt(key, name, cfg, build) { const g = new THREE.Group(); g.visible = false; EXT_GRP.add(g); build(g); EXT[key] = { name, g, ...cfg }; }
-const glassPanel = (x1, x2, y1, y2, z1, z2, par) => box(x1, x2, y1, y2, z1, z2, mats.glass, par);
-
-extOpt('gehry', 'Gehry: colliding object', { hide: true,
-  note: 'Gehry\'s own house in Santa Monica: the plain old house is left alone and the new part crashes into it in cheap, raw materials. Here the extension becomes a corrugated-metal base with a tilted glass cube bursting out of the main floor and a chain-link screen leaning across the corner. Kept inside the front line, so it shades nothing new. Small and built from ordinary materials, so it fits the minor-works scope.' }, g => {
-  box(-0.1, 2.88, 0, 2.95, 6.45, 9.2, exM.corr, g);                                   // corrugated-metal base (studio level)
-  const cube = new THREE.Group(); cube.position.set(1.45, 4.35, 7.85); cube.rotation.set(.1, .22, -.12); g.add(cube);
-  const cg = new THREE.BoxGeometry(2.9, 2.75, 2.75); cube.add(new THREE.Mesh(cg, mats.glass));
-  cube.add(new THREE.LineSegments(new THREE.EdgesGeometry(cg), exM.timberEdge));
-  for (const [a, b] of [[-1.45, -1.45], [1.45, -1.45], [-1.45, 1.375], [1.45, 1.375]]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.09, 2.75, .09), exM.ply); p.position.set(a, 0, b); cube.add(p); }
-  box(-0.1, .25, 2.95, 5.8, 6.45, 7.4, exM.ply, g);                                    // plywood panel behind the cube, against the brick
-  const ch = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 6.8), exM.chain); ch.position.set(1.0, 3.3, 9.15); ch.rotation.set(-.08, -.55, .06); g.add(ch);   // chain-link screen leaning across the corner
-});
-
-extOpt('murcutt', 'Murcutt: back-terrace pavilion', { hide: false, view: { p: [-12, 17, 14], t: [6, 9.5, -10] },
-  note: 'A separate light pavilion on the upper back terrace between the pool and the garage, on steel stilts so it barely touches the ground. About 13.5 m², facing north over the pool and your roof: it sits behind and above the house, so it shades nothing and gets full sun of its own. The skillion rises to the north to let winter sun in; louvres and timber screens handle summer and the west. No work on the old brick at all. Your extension stays as it is.' }, g => {
-  const X1 = 4.3, X2 = 9.3, Z1 = -14.7, Z2 = -11.95, F = 9.95;
-  for (const x of [X1 + .2, (X1 + X2) / 2, X2 - .2]) for (const z of [Z1 + .2, Z2 - .2]) rod(V(x, 8.2, z), V(x, F, z), .06, exM.alu, g);   // stilts
-  box(X1, X2, F - .15, F, Z1, Z2, exM.timber, g);                                      // floor
-  box(X1, X2, F, F + 2.0, Z1, Z1 + .12, exM.zinc, g);                                  // low solid south wall
-  glassPanel(X1 + .1, X2 - .1, F + .05, F + 2.85, Z2 - .08, Z2 - .04, g);               // north wall: full glass
-  for (let x = X1 + .1; x <= X2; x += 1.3) box(x - .025, x + .025, F, F + 2.9, Z2 - .1, Z2 - .02, exM.alu, g);
-  for (const xw of [X1, X2 - .1]) for (let z = Z1 + .15; z < Z2 - .1; z += .14) box(xw, xw + .1, F, F + 2.6, z, z + .06, exM.timber, g);   // timber screens east and west
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(X2 - X1 + 1.0, .07, Z2 - Z1 + 1.4), exM.zinc);
-  roof.position.set((X1 + X2) / 2, F + 2.55, (Z1 + Z2) / 2 + .2); roof.rotation.x = -.26; roof.castShadow = true; g.add(roof);   // skillion, high at the north edge
-  for (let i = 0; i < 4; i++) box(X1 - .3, X2 + .3, F + 2.6 - i * .02, F + 2.63 - i * .02, Z2 + .2 + i * .17, Z2 + .48 + i * .17, exM.alu, g);   // louvres under the north eave
-  box(X1 + 1.2, X1 + 2.4, F - .15, F, Z2, Z2 + .55, exM.timber, g);                    // small landing towards the pool path
-});
-
-extOpt('flw', 'Wright: stone core (stretch)', { hide: true,
-  note: 'Wright anchors the extension on a sandstone core rising through the roof, like the hearth at Fallingwater, and lets the floors run out as thin horizontal shelves. The rounded glass becomes a square glass corner with timber mullions. The shelves overhang about 1 m north and east, sized for this latitude so they shade summer sun but let winter sun in. A stretch: the stone core needs its own footing and the shelves need steel outriggers.' }, g => {
-  box(-0.4, .55, 0, 8.7, 6.45, 7.65, exM.stone, g);                                    // sandstone core, up through the terrace like a chimney
-  glassPanel(.55, 2.84, .1, 2.8, 9.2, 9.24, g); glassPanel(.55, 2.84, 3.05, 5.7, 9.2, 9.24, g);   // square glass corner
-  glassPanel(-0.02, .02, .1, 2.8, 7.65, 9.24, g); glassPanel(-0.02, .02, 3.05, 5.7, 7.65, 9.24, g);
-  for (let x = .55; x <= 2.9; x += .58) box(x - .03, x + .03, 0, 5.8, 9.18, 9.26, exM.bronze, g);
-  for (let z = 7.65; z <= 9.3; z += .55) box(-0.04, .04, 0, 5.8, z - .03, z + .03, exM.bronze, g);
-  box(-1.0, 3.4, 2.82, 3.02, 6.45, 10.25, exM.pale, g);                                // floor shelf
-  box(-1.0, 3.6, 5.8, 6.12, 6.45, 10.3, exM.pale, g);                                  // roof shelf (terrace edge)
-  box(-0.95, -0.7, 6.12, 6.75, 7.65, 10.3, exM.stone, g); box(-0.95, 2.6, 6.12, 6.75, 10.05, 10.3, exM.stone, g);   // low stone parapet at the corner
-});
-
-extOpt('hadid', 'Hadid: one ribbon (minimal)', { hide: true,
-  note: 'The smallest change that is still unmistakably Hadid: the extension keeps its footprint and two floors, but the corner widens to a 2 m curve in frameless glass, and one continuous white ribbon runs along the roof edge, curls down round the corner and comes back as the floor edge. No new cantilevers past about 0.3 m; the ribbon is a lightweight GRC skin on brackets. All other walls unchanged.' }, g => {
-  const R = 2.0, O = [[0, BD]];
-  for (let i = 0; i <= 16; i++) { const t = Math.PI - (i / 16) * Math.PI / 2; O.push([R + R * Math.cos(t), PF - R + R * Math.sin(t)]); }
-  O.push([PX + .02, PF]);
-  for (let i = 0; i < O.length - 1; i++) { const [x0, z0] = O[i], [x1, z1] = O[i + 1], L = Math.hypot(x1 - x0, z1 - z0) + .02;
-    const p = new THREE.Mesh(new THREE.BoxGeometry(L, 5.6, .03), mats.glass); p.position.set((x0 + x1) / 2, 2.9, (z0 + z1) / 2); p.rotation.y = Math.atan2(-(z1 - z0), x1 - x0); g.add(p); }
-  // the ribbon: roof edge -> down round the corner -> floor edge, one continuous band
-  const path = new THREE.CatmullRomCurve3([
-    V(9.0, 5.95, PF + .22), V(5.0, 5.95, PF + .26), V(2.6, 5.9, PF + .28), V(1.2, 5.55, PF + .1), V(.25, 4.7, PF - .9),
-    V(-.12, 3.9, PF - 2.1), V(.05, 3.25, PF - 1.2), V(.9, 2.98, PF + .05), V(2.6, 2.9, PF + .28), V(5.0, 2.9, PF + .26), V(9.0, 2.9, PF + .22)], false, 'centripetal', .5);
-  const sh = new THREE.Shape(); sh.moveTo(-.14, -.32); sh.lineTo(.14, -.32); sh.lineTo(.14, .32); sh.lineTo(-.14, .32); sh.lineTo(-.14, -.32);
-  const rg = new THREE.ExtrudeGeometry(sh, { steps: 240, bevelEnabled: false, extrudePath: path });
-  const rib = new THREE.Mesh(rg, exM.white); rib.castShadow = rib.receiveShadow = true; g.add(rib);
-  box(0, .3, 0, 5.8, BD, PF - R, exM.white, g);                                        // white east wall strip where the glass meets the brick
-});
-
-extOpt('ando', 'Ando: top-lit room at the back', { hide: false, view: { p: [14, 9.5, -6], t: [6.5, 4, -1.5] },
-  note: 'At the back, where the house already shades everything, so no north sun is lost. A small fair-faced concrete room fills the sunken yard behind the main floor, west of the study (about 9 m²). Its roof becomes part of the stone terrace, and a glass slot along the house wall washes daylight down the concrete: Ando\'s light, not the north sun. Little digging, because the yard is already cut. The concrete roof carrying the terrace is real structure, so it\'s a stretch rather than minor.' }, g => {
-  const X1 = 6.8, X2 = 9.7, Z1 = -3.25, Z2 = -0.02;
-  box(X1, X2, 2.9, 5.68, Z1, Z1 + .25, desMat.conc, g); box(X1, X1 + .25, 2.9, 5.68, Z1, Z2, desMat.conc, g); box(X2 - .25, X2, 2.9, 5.68, Z1, Z2, desMat.conc, g);   // concrete walls
-  box(X1, X2, 5.56, 5.8, Z1, Z2 - .6, mats.stone, g);                                   // roof = stone terrace paving
-  box(X1 + .25, X2 - .25, 5.62, 5.66, Z2 - .6, Z2, mats.glass, g);                      // light slot along the house wall
-  box(X1, X2, 5.66, 5.9, Z2 - .62, Z2 - .58, desMat.conc, g);                            // slot upstand
-  box(X1 + .9, X2 - .9, 3.0, 5.0, Z1 - .01, Z1 + .02, mats.glass, g);                   // one tall narrow window to the south yard
-});
-
-var extOn = '';   // var: read by setState during start-up
-function setExt(k) {
-  if (S.state !== 'after') setState('after');
-  for (const d of Object.values(EXT)) d.g.visible = false;
-  extShell.forEach(o => o.visible = true);
-  extOn = k && EXT[k] ? k : '';
-  if (extOn) { const d = EXT[extOn]; d.g.visible = true; if (d.hide) extShell.forEach(o => o.visible = false); if (d.view) fly(d.view); }
-  document.querySelectorAll('#extRow button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.e === extOn)));
-  const n = $('extNote'); n.textContent = extOn ? EXT[extOn].note : ''; n.hidden = !extOn;
-}
-{ const row = $('extRow');
-  const add = (k, label, title) => { const b = document.createElement('button'); b.className = 'btn'; b.dataset.e = k; b.textContent = label; if (title) b.title = title; b.setAttribute('aria-pressed', String(k === '')); b.addEventListener('click', () => setExt(k)); row.appendChild(b); };
-  add('', 'Yours', 'Your extension as designed');
-  for (const [k, d] of Object.entries(EXT)) add(k, d.name);
-}
-window.homerExt = setExt; window.homerExtGroups = EXT;
+window.homerDesign = setDesign; window.homerDesigns = DES;
 
 // ---------- camera readout: exact, shareable viewpoints ----------
 const AHD0 = 23.0;   // model y = 0 (studio floor) in metres AHD: Homer St footpath (y -5.5) sits at ~17.5 m AHD on the NSW 5 m elevation grid and 2 m contours
