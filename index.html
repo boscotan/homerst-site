@@ -60,6 +60,14 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
 .lbl.chg{pointer-events:auto;cursor:pointer;background:#2f6b5a;color:#fff;border-color:#2f6b5a;font-weight:600}
 .lbl.room{font-family:var(--f-mono);font-size:10px}
 #lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.cambox{position:absolute;top:calc(52px + env(safe-area-inset-top,0px));left:max(12px,env(safe-area-inset-left,0px));max-width:min(340px,calc(100% - 24px));background:color-mix(in srgb,var(--panel) 92%,transparent);border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.cambox .row .btn{padding:5px 9px;font-size:12px}
+.camout{margin:0;font:400 11px/1.55 var(--f-mono);font-variant-numeric:tabular-nums;white-space:pre;overflow-x:auto;color:var(--fg)}
+.camlens{display:flex;align-items:center;gap:8px;font:500 12px var(--f-body)}
+.camlens input{flex:1;accent-color:var(--accent)}
+.camgo{display:flex;gap:6px}.camgo input{flex:1;min-width:0;font:400 12px var(--f-mono);padding:5px 7px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--fg)}
+.camnote{font-size:11px;color:var(--muted);line-height:1.4;margin:0}
+@media (max-width:820px){.cambox{top:auto;bottom:8px;max-width:calc(100% - 16px)}.camnote{display:none}}
 [hidden]{display:none!important}
 #fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
 .cap{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:calc(100% - 32px);display:flex;gap:12px;align-items:center;background:rgba(15,20,18,.82);color:#fff;border-radius:10px;padding:10px 12px 10px 16px;font:500 15px var(--f-body);line-height:1.35}
@@ -85,6 +93,15 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
     <div class="badge" id="badge">After</div>
     <div class="compass" title="North (street side)"><svg id="needle" width="30" height="30" viewBox="-15 -15 30 30" aria-hidden="true"><path d="M0 -12 L5 4 L0 1 L-5 4 Z" fill="#c2412d"/><path d="M0 12 L5 4 L0 1 L-5 4 Z" fill="currentColor" opacity=".35"/><text x="0" y="-5" font-size="0" fill="none">N</text></svg></div>
     <div class="hint">Drag to orbit · scroll or pinch to zoom · right-drag to pan</div>
+    <div class="cambox" id="camBox">
+      <div class="row"><button class="btn" id="bCam" aria-expanded="false" aria-controls="camBody">Camera</button><button class="btn" id="bCamCopy" title="Copy this exact view as text">Copy view</button><button class="btn" id="bCamLink" title="Copy a link that opens this exact view">Copy link</button></div>
+      <div id="camBody" hidden>
+        <pre class="camout" id="camOut" aria-live="off"></pre>
+        <label class="camlens">Lens <input type="range" id="rLens" min="12" max="120" step="1" aria-label="Lens focal length"><span id="lensOut" style="font-family:var(--f-mono);min-width:44px"></span></label>
+        <div class="camgo"><input id="camIn" placeholder="Paste a view to go there" aria-label="View to go to"><button class="btn" id="bCamGo">Go</button></div>
+        <p class="camnote">x east→west, y up, z rear→street, in metres from the studio floor. AHD ≈ y + 23.0 m (NSW 5 m elevation and 2 m contours, ±2 m). Lens is full-frame equivalent. The link and the copied text reproduce the view exactly; the window shape sets how wide it looks.</p>
+      </div>
+    </div>
     <div id="fade" aria-hidden="true"></div>
     <div id="cap" class="cap" hidden><span id="capN" class="capn"></span><span id="capTxt"></span><button class="btn" id="bCapStop">Stop</button></div>
     <div id="walkHud" class="walkhud" hidden>
@@ -195,6 +212,7 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
       <span class="fine" style="grid-column:1/3">No council approval needed if no walls move and the deck is re-boarded (a deck rebuild over 1 m high needs approval). Build the kitchen to the After layout (A) so it survives the extension; the bench-to-the-window version (G) loses its counter when that window becomes a doorway. Lay the deck after the render, or protect it under the scaffold.</span>
     </section>
     <p class="fine"><strong>How it was built.</strong> Site, lot boundary, pool, garage and neighbours are placed from the NSW Spatial Services aerial and cadastre (Lot A DP389934, 878 m²). House footprints come from the listing floor plan (marked not to scale, read at about 25 px per metre and checked against the room sizes printed on it). Elevations and materials come from the 2015 and 2021 listing photos. Levels: studio floor 0 m, main floor +2.9 m, upper floor +5.8 m, street about −5.5 m. Expect ±0.5 m on any dimension. A concept sketch for talking to builders, not a survey.</p>
+    <p class="fine"><strong>Ground levels checked against NSW elevation data.</strong> Homer St footpath is about 17.5 m AHD, so the studio floor is about 23 m AHD (the Camera panel shows AHD for any view). The block falls about 21 m from the back street (about 38.5 m AHD) to Homer St over 69 m, steepest in the front yard at about 1 in 2, facing north-north-east. The house and front yard match the model within about 1–1.5 m. The back half does not: the model has the garage and back street about 15 m above Homer St, NSW data says about 21 m. That data is only good to a few metres and the back terraces come from photos, so the back is left as drawn until a survey (already in the approvals cost). Terrain blocks no sun: the land falls away from north-west through north to north-east, and the land horizon is under 4° wherever the sun rises or sets (east-north-east in winter, east-south-east in summer), so only neighbours and trees cast shade.</p>
     <p class="fine"><strong>Big balcony.</strong> Covers the whole living-room roof plus the extension roof, about 25 m², opening off all three bedrooms. The roof needs strengthening and waterproofing, and a street-facing balcony may raise privacy questions with council.</p>
     <p class="fine"><strong>Juliet balconies.</strong> Each bedroom window becomes full-height doors with a metal rail just outside, so the doors open wide for air and the view but nobody steps out. The roof below stays a plain roof. The cost per balcony is my own estimate (doors $3.5k–7k, rail $1.5k–3k, flashing $0.5k–1k).</p>
   </aside>
@@ -1707,6 +1725,73 @@ $('sSec').onchange = e => setSection(e.target.value);
 $('rSec').oninput = secPlane;
 document.querySelectorAll('#plans button').forEach(b => b.addEventListener('click', () => { if (b.dataset.pl) { if (WALK.on) walkOff(); if (TOUR.on) tourOff(); } }));
 
+// ---------- camera readout: exact, shareable viewpoints ----------
+const AHD0 = 23.0;   // model y = 0 (studio floor) in metres AHD: Homer St footpath (y -5.5) sits at ~17.5 m AHD on the NSW 5 m elevation grid and 2 m contours
+const lensOf = fov => 12 / Math.tan(fov * Math.PI / 360), fovOf = f => 360 / Math.PI * Math.atan(12 / f);
+const CARD = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+const camDir = new THREE.Vector3();
+function camAim() {   // target: orbit target, or 10 m ahead when walking or touring
+  if (!WALK.on && !TOUR.on) return controls.target.clone();
+  camera.getWorldDirection(camDir); return camera.position.clone().addScaledVector(camDir, 10);
+}
+const f2 = n => (Math.abs(n) < .005 ? 0 : n).toFixed(2);
+function camCode() {
+  const p = camera.position, t = camAim();
+  return `p ${f2(p.x)} ${f2(p.y)} ${f2(p.z)} | t ${f2(t.x)} ${f2(t.y)} ${f2(t.z)} | lens ${Math.round(lensOf(camera.fov))}`;
+}
+function camHash() {
+  const p = camera.position, t = camAim();
+  return '#cam=' + [p.x, p.y, p.z, t.x, t.y, t.z].map(f2).join(',') + ',' + Math.round(lensOf(camera.fov));
+}
+function camApply(txt) {
+  const n = (String(txt).match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+  if (n.length < 6) return false;
+  exitAll();
+  if (flight) flight = null;
+  const p = V(n[0], n[1], n[2]), t = V(n[3], n[4], n[5]);
+  if (n.length >= 7 && n[6] >= 8 && n[6] <= 300) camera.fov = fovOf(n[6]);
+  camera.updateProjectionMatrix();
+  // relax the orbit limits just enough that OrbitControls does not clamp the requested view
+  const d = p.distanceTo(t), polar = Math.acos(Math.max(-1, Math.min(1, (p.y - t.y) / Math.max(d, 1e-6))));
+  controls.maxPolarAngle = Math.max(Math.PI * .495, polar + .01);
+  controls.minDistance = Math.min(4, d * .9);
+  camera.position.copy(p); controls.target.copy(t); camera.lookAt(t); controls.update();
+  camLast = ''; return true;
+}
+let camLast = '', camT = 0, hashT = 0;
+function camTick(now) {
+  if (now - camT < 120) return; camT = now;
+  const code = camCode(); if (code === camLast) return; camLast = code;
+  const p = camera.position, t = camAim(), d = t.clone().sub(p), dist = d.length();
+  const r = Math.atan2(-d.x, d.z), hdg = ((r + NORTH_OFF) * 180 / Math.PI + 360) % 360;
+  const pitch = Math.atan2(d.y, Math.hypot(d.x, d.z)) * 180 / Math.PI;
+  const g = ground(p.x, p.z), lens = lensOf(camera.fov);
+  lensOut.textContent = Math.round(lens) + ' mm';
+  if (document.activeElement !== rLens) rLens.value = Math.round(lens);
+  if (!camBody.hidden) camOut.textContent =
+    `pos   x ${f2(p.x).padStart(7)}  y ${f2(p.y).padStart(6)}  z ${f2(p.z).padStart(7)}\n` +
+    `aim   x ${f2(t.x).padStart(7)}  y ${f2(t.y).padStart(6)}  z ${f2(t.z).padStart(7)}\n` +
+    `facing ${hdg.toFixed(0).padStart(3)}° true (${CARD[Math.round(hdg / 22.5) % 16]})  pitch ${pitch >= 0 ? '+' : ''}${pitch.toFixed(1)}°\n` +
+    `lens ${lens.toFixed(0)} mm  (fov ${camera.fov.toFixed(1)}° vertical)  dist ${dist.toFixed(1)} m\n` +
+    `eye ${(p.y + AHD0).toFixed(1)} m AHD  ·  ${(p.y - g).toFixed(1)} m above ground (${(g + AHD0).toFixed(1)} m AHD)` +
+    (S.plan ? '\n(plan view is flat; these figures are the 3D camera)' : '');
+  if (!WALK.on && !TOUR.on && now - hashT > 600) { hashT = now; try { history.replaceState(null, '', camHash()); } catch (e) {} }
+}
+const camBody = $('camBody'), camOut = $('camOut'), rLens = $('rLens'), lensOut = $('lensOut'), camIn = $('camIn');
+async function copyText(t, btn) {
+  try { await navigator.clipboard.writeText(t); } catch (e) { camIn.value = t; camIn.select(); }
+  const o = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => btn.textContent = o, 1200);
+}
+$('bCam').addEventListener('click', e => { camBody.hidden = !camBody.hidden; e.currentTarget.setAttribute('aria-expanded', String(!camBody.hidden)); camLast = ''; });
+$('bCamCopy').addEventListener('click', e => copyText(camCode(), e.currentTarget));
+$('bCamLink').addEventListener('click', e => copyText(location.href.split('#')[0] + camHash(), e.currentTarget));
+$('bCamGo').addEventListener('click', () => { if (!camApply(camIn.value)) camIn.setCustomValidity('Needs at least 6 numbers: x y z of the camera, then x y z it looks at'), camIn.reportValidity(); else camIn.setCustomValidity(''); });
+camIn.addEventListener('keydown', e => { if (e.key === 'Enter') $('bCamGo').click(); });
+rLens.addEventListener('input', () => { camera.fov = fovOf(+rLens.value); camera.updateProjectionMatrix(); camLast = ''; });
+window.addEventListener('hashchange', () => { const m = location.hash.match(/cam=([-\d.,]+)/); if (m && m[1] !== camHash().slice(5)) camApply(m[1]); });
+{ const m = location.hash.match(/cam=([-\d.,]+)/); if (m) camApply(m[1]); }
+window.homerCam = { get: camCode, set: camApply };
+
 // ---------- loop ----------
 const needle = $('needle'), tmp = new THREE.Vector3();
 function resize() {
@@ -1739,6 +1824,7 @@ function tick(now) {
   // compass: direction of +Z (north) on screen
   const a = V(5, 3, 3).project(cam), b = V(5, 3, 13).project(cam);
   needle.style.transform = `rotate(${Math.atan2((b.x - a.x) * w, (b.y - a.y) * h) * 180 / Math.PI}deg)`;
+  camTick(now);
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
