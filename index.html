@@ -119,6 +119,12 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
       <button id="bAfter" aria-pressed="true">After</button>
     </div>
     <section>
+      <h2>Inspired designs</h2>
+      <div class="row" id="desRow"></div>
+      <p class="fine" id="desNote" hidden></p>
+      <p class="fine">Each one is built on the After frame: same footprint, floor levels, extension and roof terrace. Click again to go back to the After.</p>
+    </section>
+    <section>
       <h2>Floor plans (overhead)</h2>
       <div class="row" id="plans">
         <button class="btn" data-pl="" aria-pressed="true">3D model</button>
@@ -636,7 +642,7 @@ box(5.45, 6.25, LV_U[0], 7.9, -2.66, -2.56, doorM);                     // study
 win('x', 0.9, 6.2, 6.4, 7.9, SW, 1, mats.fUpper, common, 5);            // sunroom west strip
 win('z', BW + .25, SW - .25, 6.4, 7.9, BD, 1, mats.fUpper, common, 2); win('z', BW + .3, SW - .3, 6.6, 7.8, 0.63, -1, mats.fUpper);
 // bedroom fronts. before: windows. after: full-height doors to three Juliet balconies
-for (const [a, b, n] of [[0.77, 2.86, 2], [4.43, 5.48, 2], [7.43, 9.25, 3]]) { win('z', a, b, 6.7, 7.9, BD, 1, mats.fUpper, before, n); win('z', a - .1, b + .1, 5.95, 8.0, BD, 1, mats.fUpper, after, n); }
+for (const [a, b, n] of [[0.77, 2.86, 2], [4.43, 5.48, 2], [7.43, 9.25, 3]]) { win('z', a, b, 6.7, 7.9, BD, 1, mats.fUpper, before, n); win('z', a - .1, b + .1, 6.03, 8.0, BD, 1, mats.fUpper, after, n); }
 // roofs
 hipRoof(-0.35, BW + .4, -0.35, BD + .35, 8.5, 0.75, mats.roof);
 box(0.8, 6.7, 8.3, 8.42, -2.9, 0.1, M({ color: 0xdcdad4 }));            // study: pale low-pitch metal roof
@@ -675,7 +681,9 @@ wallRun('x', BW, -1, 0, BD, ...LV_M, [[2.26, 2.94, 2.95, 5.0]]);          // doo
 // upper
 wallRun('x', 0, 1, 0, BD, ...LV_U, [[1.2, 2.1, 7.0, 7.8]]);
 wallRun('z', 0, 1, 0, BW, ...LV_U, [[3.24, 3.94, 5.86, 7.9], [9.25, 9.8, 7.2, 7.8]]);
-wallRun('z', BD, -1, 0, BW, ...LV_U, [[0.77, 2.86, 6.7, 7.9], [4.43, 5.48, 6.7, 7.9], [7.43, 9.25, 6.7, 7.9]]);
+wallRun('z', BD, -1, 0, BW, ...LV_U, [[0.77, 2.86, 6.7, 7.9], [4.43, 5.48, 6.7, 7.9], [7.43, 9.25, 6.7, 7.9]], before);
+wallRun('z', BD, -1, 0, BW, ...LV_U, [[0.67, 2.96, LV_U[0], 8.0], [4.33, 5.58, LV_U[0], 8.0], [7.33, 9.35, LV_U[0], 8.0]], after);   // after: the bedroom windows become full-height doors (same openings as the outside doors), floor to an 8.0 head
+for (const [a, b] of [[0.77, 2.86], [4.43, 5.48], [7.43, 9.25]]) box(a - .1, b + .1, 5.8, 5.98, BD - T, BD + .02, mats.fUpper, after);   // after: door sill from the bedroom floor (5.86) up to the balcony deck (5.98), a 12 cm waterproofing step; the door's bottom rail sits on it
 wallRun('x', BW, -1, 0, BD, ...LV_U, [[1.74, 2.6, 5.66, 7.9]]);            // arch from bed 1 down into the sunroom
 wallRun('x', 1.1, 1, -2.6, 0, ...LV_U, [[-2.3, -0.3, 6.6, 7.9]]); wallRun('x', 6.4, -1, -2.6, 0, ...LV_U, [[-2.3, -0.3, 6.6, 7.9]]);
 wallRun('z', -2.6, 1, 1.1, 6.4, ...LV_U, [[1.4, 5.3, 6.6, 7.9], [5.45, 6.25, 5.86, 7.9]]);
@@ -1359,6 +1367,7 @@ function applyFloors() {
   upFloors.forEach(f => f.material = m);
 }
 function setState(s) {
+  if (typeof designOff === 'function') designOff();
   S.state = s;
   before.visible = s === 'before'; after.visible = s === 'after';
   const A = s === 'after';
@@ -1724,6 +1733,194 @@ function setSection(k) {
 $('sSec').onchange = e => setSection(e.target.value);
 $('rSec').oninput = secPlane;
 document.querySelectorAll('#plans button').forEach(b => b.addEventListener('click', () => { if (b.dataset.pl) { if (WALK.on) walkOff(); if (TOUR.on) tourOff(); } }));
+
+// ---------- architect-inspired designs, built on the After frame ----------
+// Each design keeps the After's footprint, floor levels (0, 2.9, 5.8), extension outline and roof-terrace position,
+// and changes the outside: skin, slab edges, parapets, roof, screens, canopies. Shown on top of the After state.
+const DES_GRP = new THREE.Group(); scene.add(DES_GRP);
+const DES = {};
+const desMat = {
+  hadid: M({ color: 0xf4f3f0, roughness: .25 }),
+  steel: M({ color: 0xd9dcde, roughness: .32, metalness: .35, side: THREE.DoubleSide }),
+  conc: M({ map: canvasTex(256, 256, (g, w, h) => {
+    g.fillStyle = '#a9a8a2'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 2600; i++) { const v = 150 + rnd() * 40 | 0; g.fillStyle = `rgba(${v},${v},${v - 4},.25)`; g.fillRect(rnd() * w, rnd() * h, 2, 2); }
+    g.strokeStyle = 'rgba(80,80,78,.35)'; g.lineWidth = 1.5;
+    for (let x = 0; x <= w; x += 128) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+    for (let y = 0; y <= h; y += 64) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+    g.fillStyle = 'rgba(60,60,58,.6)'; for (let x = 32; x < w; x += 64) for (let y = 16; y < h; y += 32) { g.beginPath(); g.arc(x, y, 2.4, 0, 7); g.fill(); }
+  }, 1), roughness: .9 }),
+  pale: M({ color: 0xe8e2d4, roughness: .8 }),
+  white: M({ color: 0xf6f5f1, roughness: .7 }),
+  timber: M({ color: 0xb98a5a, roughness: .75 }),
+  bronze: M({ color: 0x4a3a2c, roughness: .45, metalness: .5 }),
+  alu: M({ color: 0xb8bcbd, roughness: .4, metalness: .6 }),
+  zinc: M({ color: 0xc4c9cb, roughness: .4, metalness: .3, side: THREE.DoubleSide }),
+  glassRail: M({ color: 0xbfd6dc, roughness: .05, transparent: true, opacity: .32, depthWrite: false }),
+  pv: M({ color: 0x1b2433, roughness: .25, metalness: .4 }),
+  sandstone: M({ color: 0xc9ad80, roughness: .95 }),
+};
+desMat.conc.map.repeat.set(.35, .35);
+// plan outline of the front volume (extension + projection), pushed out by o, with a corner radius r at the east-front corner
+function frontOutline(o, r, back = BD) {
+  const pts = [[BW + o, back], [BW + o, PF + o]];
+  for (let i = 0; i <= 14; i++) { const t = Math.PI / 2 + (i / 14) * Math.PI / 2; pts.push([EXr + Math.cos(t) * (EXr + o), PF - EXr + Math.sin(t) * (EXr + o)]); }
+  pts.push([-o, back]);
+  return pts;
+}
+// a horizontal slab following the front outline: from the wall line (back) out to o, thickness th, top at y
+function frontSlab(y, th, o, mat, par, back = BD, rShift = 0) {
+  const P = frontOutline(o, EXr, back); const sh = new THREE.Shape();
+  P.forEach(([x, z], i) => i ? sh.lineTo(x, -z) : sh.moveTo(x, -z));
+  const g = new THREE.ExtrudeGeometry(sh, { depth: th, bevelEnabled: false, curveSegments: 24 }); g.rotateX(-Math.PI / 2);
+  const m = new THREE.Mesh(g, mat); m.position.y = y - th; m.castShadow = m.receiveShadow = true; par.add(m); return m;
+}
+// a thin upstand (parapet or balustrade) along the outline at offset o, from y to y+h
+function frontUpstand(y, h, o, th, mat, par) {
+  const P = frontOutline(o, EXr).slice(0, -1).concat([[-o, BD]]);
+  for (let i = 0; i < P.length - 1; i++) {
+    const [x0, z0] = P[i], [x1, z1] = P[i + 1], L = Math.hypot(x1 - x0, z1 - z0); if (L < .01) continue;
+    const s = new THREE.Mesh(new THREE.BoxGeometry(L + .01, h, th), mat); s.position.set((x0 + x1) / 2, y + h / 2, (z0 + z1) / 2);
+    s.rotation.y = Math.atan2(-(z1 - z0), x1 - x0); s.castShadow = mat !== desMat.glassRail; par.add(s);
+  }
+}
+const flatRoof = (y, th, o, mat, par) => box(-0.35 - o, BW + .4 + o, y, y + th, -0.35 - o * .4, BD + .35 + o, mat, par);
+// house roof meshes (hidden by designs that use a flat or floating roof)
+const houseRoof = []; common.traverse(o => { if (o.isMesh && o.material === mats.roof) { const bb = new THREE.Box3().setFromObject(o); if (bb.min.y > 8 && bb.max.x < 13.5 && bb.min.z > -1.5) houseRoof.push(o); } });
+
+function design(key, name, cfg, build) { const g = new THREE.Group(); g.visible = false; DES_GRP.add(g); build(g); DES[key] = { name, g, ...cfg }; }
+
+design('hadid', 'Zaha Hadid', { skin: 'render', render: 0xf4f3f0, rough: .3, frames: 0x1d2124, roof: false, bal: false,
+  note: 'White, fluid and continuous. Two sweeping slab bands wrap the rounded corner and run out over the slope; a curved white shell rises from the terrace edge into the roof. All skin and slab-edge work on the existing walls, but the 1.4 m curved cantilevers and the shell roof are the most structure of any option.' }, g => {
+  frontSlab(2.95, .38, 1.0, desMat.hadid, g);
+  frontSlab(6.0, .5, 1.45, desMat.hadid, g);
+  frontUpstand(6.0, .95, 1.35, .22, desMat.hadid, g);
+  // curved shell: rises from the terrace edge over the bedrooms (clears the 8.3 m upper ceiling) and caps the house
+  const C = [], z0 = PF + 1.45, z1 = -0.35;
+  for (let i = 0; i <= 28; i++) { const z = z0 + (z1 - z0) * i / 28; let y;
+    if (z > BD) { const u = (z0 - z) / (z0 - BD); y = 7.2 + 1.35 * (1 - Math.cos(u * Math.PI)) / 2; } else y = 8.55 + .2 * (BD - z) / (BD - z1);
+    C.push([z, y]); }
+  const sec = new THREE.Shape(); C.forEach(([z, y], i) => i ? sec.lineTo(z, y) : sec.moveTo(z, y)); for (let i = C.length - 1; i >= 0; i--) sec.lineTo(C[i][0], C[i][1] + .24);
+  const D = BW + 1.3, sg = new THREE.ExtrudeGeometry(sec, { depth: D, bevelEnabled: false }); sg.rotateY(-Math.PI / 2);
+  const shell = new THREE.Mesh(sg, desMat.hadid); shell.position.set(-0.75 + D, 0, 0); shell.castShadow = shell.receiveShadow = true; g.add(shell);
+  for (const x of [1.6, 5.2, 9.4]) box(x - .07, x + .07, 6.0, 7.22, PF + 1.15, PF + 1.3, desMat.hadid, g);   // slim columns under the shell edge
+});
+
+design('gehry', 'Frank Gehry', { skin: 'render', render: 0xaeb3b6, rough: .45, frames: 0x30343a, roof: false, bal: false,
+  note: 'Brushed stainless steel, folded and billowing. A twisted steel canopy floats over the roof terrace, leaning steel shards break up the front, and a steel drum wraps the rounded corner. Dramatic, but every curved sheet needs its own steel frame: out of the minor-works scope.' }, g => {
+  // a curved, twisted sheet: w x h plane, bent by 'bend' across its width and twisted by 'twist' along it
+  const sheet = (w, h, bend, twist, pos, rot) => { const geo = new THREE.PlaneGeometry(w, h, 24, 12), P = geo.attributes.position;
+    for (let i = 0; i < P.count; i++) { const u = P.getX(i) / w + .5, v = P.getY(i) / h + .5; P.setZ(i, bend * Math.sin(Math.PI * u) + twist * (u - .5) * (v - .5) * 2); }
+    geo.computeVertexNormals(); const m = new THREE.Mesh(geo, desMat.steel); m.position.set(...pos); m.rotation.set(...rot); m.castShadow = true; g.add(m); return m; };
+  sheet(12.5, 5.2, 1.3, 1.6, [5.0, 8.25, BD + 1.6], [-Math.PI / 2 + .12, 0, .05]);            // billowing canopy over the terrace
+  sheet(2.6, 6.4, .7, .5, [4.0, 3.1, PF + .55], [.04, .32, .07]);                              // leaning shards on the front
+  sheet(2.2, 5.6, .6, -.6, [7.0, 2.9, PF + .6], [-.05, -.28, -.08]);
+  sheet(1.8, 4.2, .5, .4, [9.7, 4.3, PF + .45], [.03, .45, .12]);
+  const drum = new THREE.Mesh(new THREE.CylinderGeometry(EXr + .45, EXr + .75, 6.6, 32, 1, true, Math.PI * 1.42, Math.PI * .72), desMat.steel);
+  drum.position.set(EXr, 3.0, PF - EXr); drum.rotation.z = .05; drum.castShadow = true; g.add(drum);                        // drum round the corner
+  sheet(4.2, 3.2, .9, 1.0, [11.6, 8.6, 3.2], [-.3, Math.PI / 2 - .3, .25]);                     // steel fold over the west tower
+  flatRoof(8.35, .14, .2, M({ color: 0x8e9396, roughness: .5 }), g);
+  frontUpstand(5.95, 1.0, .05, .04, desMat.steel, g);
+  for (const [x, z] of [[1.0, BD + 3.6], [9.4, BD + 3.7]]) box(x - .06, x + .06, 5.95, 7.7, z - .06, z + .06, desMat.steel, g);
+});
+
+design('ando', 'Tadao Ando', { skin: 'render', render: 0xa9a8a2, rough: .9, map: 'conc', frames: 0x2b2d2f, roof: false, bal: false,
+  note: 'Fair-faced concrete, few precise planes. The front becomes concrete panels with long horizontal slots, a concrete blade wall screens the east neighbour, and a thin flat concrete roof plane caps the house. Off-form concrete on this slope is out of scope; a render finish over the brick gets the look within it, but the small openings give up most of the north sun.' }, g => {
+  // concrete panel over the main-floor glass with one long slot; studio keeps a deep-set glass slot
+  box(EXr - .05, BW + .02, 3.0, 4.15, PF + .02, PF + .2, desMat.conc, g); box(EXr - .05, BW + .02, 4.75, 5.85, PF + .02, PF + .2, desMat.conc, g);
+  box(EXr - .05, BW + .02, 1.75, 2.95, PF + .02, PF + .2, desMat.conc, g);
+  frontUpstand(5.95, 1.1, .1, .2, desMat.conc, g);
+  box(-1.15, -0.85, -0.1, 8.9, 2.0, PF + 2.2, desMat.conc, g);        // blade wall on the east side
+  flatRoof(8.55, .22, 1.1, desMat.conc, g);
+  box(-0.35, BW + .4, 8.3, 8.55, -0.35, BD + .35, desMat.conc, g);    // parapet band under the plane, hiding the old hip
+});
+
+design('flw', 'Frank Lloyd Wright', { skin: 'brick', render: 0xd8ccb2, frames: 0x3b2f25, roof: false, bal: false,
+  note: 'Brick kept, strong horizontals tied to the slope. Deep pale slab edges at each floor, a low broad roof plane with wide eaves, sandstone piers and a sandstone base under the deck. Eaves resized for Sydney (about 1 m, not his 1.5 m+) so winter sun still reaches the glass; steel outriggers keep it minor.' }, g => {
+  frontSlab(2.95, .24, 1.0, desMat.pale, g);
+  frontSlab(6.0, .3, 1.15, desMat.pale, g);
+  frontUpstand(6.0, .55, 1.05, .3, mats.brick, g);
+  flatRoof(8.45, .26, 1.2, desMat.pale, g);
+  box(-0.35, BW + .4, 8.2, 8.45, -0.35, BD + .35, mats.brick, g);
+  for (const x of [-1.2, 4.3, 10.25]) box(x - .3, x + .3, -1.6, 0, 10.9, 11.5, desMat.sandstone, g);   // piers under the deck edge
+  box(-1.35, 10.4, -1.3, -0.08, 11.05, 11.25, desMat.sandstone, g);                                   // sandstone base course
+  box(BW + .02, BW + .32, 0, 8.2, PF - 1.2, PF - .6, desMat.sandstone, g);                            // sandstone chimney-pier at the west end
+});
+
+design('seidler', 'Harry Seidler', { skin: 'render', render: 0xf2f1ec, frames: 0x25282b, roof: false, bal: false,
+  note: 'Sydney modernism: crisp white render, bold horizontal balcony slabs projecting over the slope, the curved glazed corner kept as the signature, a flat roof with a thin edge. Slabs held to about 1.2 m so they stay outriggers, not new frames; they double as north sunshades.' }, g => {
+  frontSlab(2.98, .42, 1.2, desMat.white, g);
+  frontSlab(6.0, .48, 1.25, desMat.white, g);
+  frontUpstand(6.0, .32, 1.15, .2, desMat.white, g); frontUpstand(6.32, .72, 1.15, .03, desMat.glassRail, g);
+  flatRoof(8.45, .3, .5, desMat.white, g);
+  box(-0.35, BW + .4, 8.2, 8.45, -0.35, BD + .35, desMat.white, g);
+  box(BW + .05, BW + .3, 0, 8.75, BD, PF + 1.25, desMat.white, g);   // vertical white fin at the west end
+});
+
+design('murcutt', 'Glenn Murcutt', { skin: 'brick', render: 0x6d7174, frames: 0x3c4043, roof: true, bal: true,
+  note: 'Brick kept, light steel and timber on top. A thin zinc skillion roof floats over the terrace on slender posts, rows of adjustable aluminium louvres shade the main-floor glass, and timber screens sit on the west side. Almost no added load on the old brick: the best structural fit.' }, g => {
+  // floating skillion: high at the house, low at the terrace edge
+  const sk = new THREE.Mesh(new THREE.BoxGeometry(BW + 1.6, .08, PF + 1.8 - BD + .3), desMat.zinc);
+  sk.position.set(BW / 2, 8.2, (BD + PF + 1.8) / 2 - .15); sk.rotation.x = .1; sk.castShadow = true; g.add(sk);
+  for (const x of [-0.4, 3.0, 6.5, 10.0]) rod(V(x, 5.95, PF + 1.5), V(x, 7.98, PF + 1.5), .05, desMat.alu, g);
+  // louvre blades over the main-floor glass and the studio glass
+  for (const [y0, n] of [[5.6, 6], [2.7, 5]]) for (let i = 0; i < n; i++) box(EXr, BW + .1, y0 - i * .02, y0 - i * .02 + .03, PF + .15 + i * .17, PF + .45 + i * .17, desMat.alu, g);
+  for (let z = BD + .2; z < PF; z += .16) box(BW + .08, BW + .12, 2.95, 5.75, z, z + .07, desMat.timber, g);   // timber battens on the west face
+});
+
+design('kuma', 'Kengo Kuma', { skin: 'brick', render: 0x8a6a4a, frames: 0x3a3028, roof: true, bal: true,
+  note: 'A veil of thin vertical timber battens wrapped over the front, thicker where it shades, opening up at the doors and the view. All screen, no structure: light brackets off the existing walls. Upkeep is the cost, and on the north face the battens trade away some winter sun.' }, g => {
+  const bat = new THREE.BoxGeometry(.045, 1, .09), list = [];
+  const P = frontOutline(.35, EXr).slice(1, -1);   // along the front and round the corner
+  for (let i = 0; i < P.length - 1; i++) { const [x0, z0] = P[i], [x1, z1] = P[i + 1], L = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(L / .13));
+    for (let k = 0; k < n; k++) { const t = (k + .5) / n, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t, gap = (k * 7 + i * 3) % 11 === 0;
+      if (!gap) list.push([x, z, 0.05, 5.85]); } }
+  for (let x = -0.2; x < BW; x += .13) if (Math.floor(x / .13) % 9 > 1) list.push([x, BD + .35, 5.95, 8.3]);   // upper floor, gaps at the doors
+  const im = new THREE.InstancedMesh(bat, desMat.timber, list.length), d = new THREE.Object3D();
+  list.forEach(([x, z, y1, y2], i) => { d.position.set(x, (y1 + y2) / 2, z); d.scale.set(1, y2 - y1, 1); d.rotation.y = 0; d.updateMatrix(); im.setMatrixAt(i, d.matrix); });
+  im.castShadow = true; g.add(im);
+  box(-0.6, BW + .6, 5.85, 5.97, BD, PF + .5, desMat.timber, g);   // timber soffit band at the terrace edge
+});
+
+design('sun', 'Sun Planes on Brick (settled design)', { skin: 'brickAll', render: 0xe8e2d4, frames: 0x4a3a2c, roof: true, bal: false,
+  note: 'The settled design. Brick everywhere and no charcoal bands. Thin pale sunshade planes project 0.9 m over the north glass at both floors and run round the curve (full winter sun, summer glass shaded). Frameless glass balustrade, bronze louvres on the west glass, solar panels on the north roof face (about 3.5 kW shown; the east and west hips take it to about 6.6 kW). All within the After\'s scale of work.' }, g => {
+  frontSlab(6.0, .2, .9, desMat.pale, g);
+  frontSlab(2.98, .12, .85, desMat.pale, g);
+  frontUpstand(6.0, 1.0, .82, .025, desMat.glassRail, g);
+  for (let z = BD + .2; z < PF - .1; z += .22) box(BW + .06, BW + .16, 3.0, 5.7, z, z + .12, desMat.bronze, g);   // west louvres
+  // solar panels on the north face of the hip roof (12° pitch)
+  const pitch = Math.atan2(.75, (BD + .7) / 2), eave = BD + .35;
+  for (const [zc, xs] of [[6.2, [1.0, 2.75, 4.5, 6.25, 8.0]], [5.15, [2.75, 4.5, 6.25]]]) for (const x of xs) {
+    const p = new THREE.Mesh(new THREE.BoxGeometry(1.7, .04, 1.0), desMat.pv);
+    p.position.set(x + .85, 8.5 + (eave - zc) * Math.tan(pitch) + .07, zc); p.rotation.x = pitch; p.castShadow = true; g.add(p); }
+});
+
+var desOn = '', balMem = null;   // var: setState() calls designOff() during start-up, before this line runs
+const MAT0 = { render: { c: mats.render.color.getHex(), map: mats.render.map, r: mats.render.roughness, m: mats.render.metalness }, fU: mats.fUpper.color.getHex(), fL: mats.fLower.color.getHex() };
+function designOff() {
+  if (!desOn) return; const d = DES[desOn]; d.g.visible = false; desOn = '';
+  Object.assign(mats.render, { map: MAT0.render.map, roughness: MAT0.render.r, metalness: MAT0.render.m }); mats.render.needsUpdate = true;
+  houseRoof.forEach(o => o.visible = true); if (balMem) { balBig.visible = balMem[0]; balJul.visible = balMem[1]; balMem = null; }
+  document.querySelectorAll('#desRow button').forEach(b => b.setAttribute('aria-pressed', 'false')); $('desNote').hidden = true;
+}
+function setDesign(k) {
+  if (!k || k === desOn) { designOff(); setState(S.state); return; }
+  designOff(); setState('after'); balMem = [balBig.visible, balJul.visible]; desOn = k; const d = DES[k]; d.g.visible = true;
+  // skin: brick kept on brick shells, everything else in the design's render
+  for (const m of skinned) m.material = d.skin === 'brickAll' ? mats.brick : (d.skin === 'brick' && m.userData.skin === 'brick' ? mats.brick : mats.render);
+  after.traverse(o => { if (o.userData.skin === 'brick' && Array.isArray(o.material)) o.material = o.material.map(x => (x === mats.render || x === mats.brick) ? (d.skin === 'render' ? mats.render : mats.brick) : x); });
+  mats.render.color.setHex(d.render); mats.render.roughness = d.rough ?? .85; mats.render.metalness = d.metal ?? 0;
+  mats.render.map = d.map === 'conc' ? desMat.conc.map : MAT0.render.map; mats.render.needsUpdate = true;
+  mats.fUpper.color.setHex(d.frames); mats.fLower.color.setHex(d.frames);
+  houseRoof.forEach(o => o.visible = d.roof); balBig.visible = d.bal; balJul.visible = false;
+  document.querySelectorAll('#desRow button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.d === k)));
+  $('badge').textContent = 'Inspired: ' + d.name; $('badge').className = 'badge after';
+  $('desNote').textContent = d.note; $('desNote').hidden = false;
+}
+{ const row = $('desRow');
+  for (const [k, d] of Object.entries(DES)) { const b = document.createElement('button'); b.className = 'btn'; b.dataset.d = k; b.textContent = d.name.replace(' (settled design)', ''); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => setDesign(desOn === k ? '' : k)); row.appendChild(b); }
+}
+window.homerDesign = setDesign;
 
 // ---------- camera readout: exact, shareable viewpoints ----------
 const AHD0 = 23.0;   // model y = 0 (studio floor) in metres AHD: Homer St footpath (y -5.5) sits at ~17.5 m AHD on the NSW 5 m elevation grid and 2 m contours
