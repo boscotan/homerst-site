@@ -125,6 +125,12 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
       <p class="fine">Default is your own design. Each inspired one is built on its frame: same footprint, floor levels, extension and roof terrace.</p>
     </section>
     <section>
+      <h2>Extension options</h2>
+      <div class="row" id="extRow"></div>
+      <p class="fine" id="extNote" hidden></p>
+      <p class="fine">How each architect would do the extension. Works with any facade above. Nothing projects north of the glazed front except eaves that let winter sun in.</p>
+    </section>
+    <section>
       <h2>Floor plans (overhead)</h2>
       <div class="row" id="plans">
         <button class="btn" data-pl="" aria-pressed="true">3D model</button>
@@ -1923,6 +1929,113 @@ function setDesign(k) {
   for (const [k, d] of Object.entries(DES)) { const b = document.createElement('button'); b.className = 'btn'; b.dataset.d = k; b.textContent = d.name.replace(' (settled design)', ''); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => setDesign(desOn === k ? '' : k)); row.appendChild(b); }
 }
 window.homerDesign = setDesign;
+
+// ---------- extension options (After only): the architects' takes on the extension ----------
+// Sun rule for all of them: nothing projects north of the glazed front line, except eaves of about 1 m that shade summer sun only.
+const EXT = {}, EXT_GRP = new THREE.Group(); after.add(EXT_GRP);   // parented to the After, so they only show in the After
+const exM = {
+  corr: M({ map: canvasTex(128, 128, (g, w, h) => { for (let x = 0; x < w; x++) { const v = 150 + 55 * Math.sin(x / w * Math.PI * 16); g.fillStyle = `rgb(${v | 0},${v + 3 | 0},${v + 6 | 0})`; g.fillRect(x, 0, 1, h); } }, 1), roughness: .4, metalness: .35 }),
+  ply: M({ color: 0xc9a77a, roughness: .8 }),
+  chain: M({ map: canvasTex(64, 64, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(170,175,178,1)'; g.lineWidth = 2; for (let i = -w; i < w * 2; i += 10) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + h, h); g.stroke(); g.beginPath(); g.moveTo(i + h, 0); g.lineTo(i, h); g.stroke(); } }, 6), transparent: true, alphaTest: .3, side: THREE.DoubleSide }),
+  timberEdge: new THREE.LineBasicMaterial({ color: 0x9a6b3c }),
+  stone: M({ color: 0xc6a77a, roughness: .95 }), pale: M({ color: 0xe8e2d4, roughness: .8 }), bronze: M({ color: 0x4a3a2c, roughness: .45, metalness: .5 }),
+  white: M({ color: 0xf6f5f2, roughness: .22 }), zinc: M({ color: 0xc4c9cb, roughness: .4, metalness: .3, side: THREE.DoubleSide }),
+  alu: M({ color: 0xb8bcbd, roughness: .4, metalness: .6 }), timber: M({ color: 0xb98a5a, roughness: .75 }),
+};
+exM.chain.map.repeat.set(6, 6);
+// the After's own extension shell (walls, glass, mullions round the rounded corner), hidden by options that replace it
+const extShell = [];
+after.traverse(o => {
+  if (!o.isMesh || ![mats.glass, mats.render, mats.fUpper].includes(o.material)) return;
+  const bb = new THREE.Box3().setFromObject(o), c = bb.getCenter(new THREE.Vector3());
+  if (bb.min.y < -0.2 || bb.max.y > 5.9 || c.x > 2.95 || c.z < 6.3 || c.z > 9.5) return;
+  const onEast = c.x < .25, onFront = c.z > 9.05, onCurve = c.x < 1.5 && c.z > 7.9 && Math.hypot(c.x - EXr, c.z - (PF - EXr)) > .9;
+  if (onEast || onFront || onCurve) extShell.push(o);
+});
+function extOpt(key, name, cfg, build) { const g = new THREE.Group(); g.visible = false; EXT_GRP.add(g); build(g); EXT[key] = { name, g, ...cfg }; }
+const glassPanel = (x1, x2, y1, y2, z1, z2, par) => box(x1, x2, y1, y2, z1, z2, mats.glass, par);
+
+extOpt('gehry', 'Gehry: colliding object', { hide: true,
+  note: 'Gehry\'s own house in Santa Monica: the plain old house is left alone and the new part crashes into it in cheap, raw materials. Here the extension becomes a corrugated-metal base with a tilted glass cube bursting out of the main floor and a chain-link screen leaning across the corner. Kept inside the front line, so it shades nothing new. Small and built from ordinary materials, so it fits the minor-works scope.' }, g => {
+  box(-0.1, 2.88, 0, 2.95, 6.45, 9.2, exM.corr, g);                                   // corrugated-metal base (studio level)
+  const cube = new THREE.Group(); cube.position.set(1.45, 4.35, 7.85); cube.rotation.set(.1, .22, -.12); g.add(cube);
+  const cg = new THREE.BoxGeometry(2.9, 2.75, 2.75); cube.add(new THREE.Mesh(cg, mats.glass));
+  cube.add(new THREE.LineSegments(new THREE.EdgesGeometry(cg), exM.timberEdge));
+  for (const [a, b] of [[-1.45, -1.45], [1.45, -1.45], [-1.45, 1.375], [1.45, 1.375]]) { const p = new THREE.Mesh(new THREE.BoxGeometry(.09, 2.75, .09), exM.ply); p.position.set(a, 0, b); cube.add(p); }
+  box(-0.1, .25, 2.95, 5.8, 6.45, 7.4, exM.ply, g);                                    // plywood panel behind the cube, against the brick
+  const ch = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 6.8), exM.chain); ch.position.set(1.0, 3.3, 9.15); ch.rotation.set(-.08, -.55, .06); g.add(ch);   // chain-link screen leaning across the corner
+});
+
+extOpt('murcutt', 'Murcutt: back-terrace pavilion', { hide: false, view: { p: [-12, 17, 14], t: [6, 9.5, -10] },
+  note: 'A separate light pavilion on the upper back terrace between the pool and the garage, on steel stilts so it barely touches the ground. About 13.5 m², facing north over the pool and your roof: it sits behind and above the house, so it shades nothing and gets full sun of its own. The skillion rises to the north to let winter sun in; louvres and timber screens handle summer and the west. No work on the old brick at all. Your extension stays as it is.' }, g => {
+  const X1 = 4.3, X2 = 9.3, Z1 = -14.7, Z2 = -11.95, F = 9.95;
+  for (const x of [X1 + .2, (X1 + X2) / 2, X2 - .2]) for (const z of [Z1 + .2, Z2 - .2]) rod(V(x, 8.2, z), V(x, F, z), .06, exM.alu, g);   // stilts
+  box(X1, X2, F - .15, F, Z1, Z2, exM.timber, g);                                      // floor
+  box(X1, X2, F, F + 2.0, Z1, Z1 + .12, exM.zinc, g);                                  // low solid south wall
+  glassPanel(X1 + .1, X2 - .1, F + .05, F + 2.85, Z2 - .08, Z2 - .04, g);               // north wall: full glass
+  for (let x = X1 + .1; x <= X2; x += 1.3) box(x - .025, x + .025, F, F + 2.9, Z2 - .1, Z2 - .02, exM.alu, g);
+  for (const xw of [X1, X2 - .1]) for (let z = Z1 + .15; z < Z2 - .1; z += .14) box(xw, xw + .1, F, F + 2.6, z, z + .06, exM.timber, g);   // timber screens east and west
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(X2 - X1 + 1.0, .07, Z2 - Z1 + 1.4), exM.zinc);
+  roof.position.set((X1 + X2) / 2, F + 2.55, (Z1 + Z2) / 2 + .2); roof.rotation.x = -.26; roof.castShadow = true; g.add(roof);   // skillion, high at the north edge
+  for (let i = 0; i < 4; i++) box(X1 - .3, X2 + .3, F + 2.6 - i * .02, F + 2.63 - i * .02, Z2 + .2 + i * .17, Z2 + .48 + i * .17, exM.alu, g);   // louvres under the north eave
+  box(X1 + 1.2, X1 + 2.4, F - .15, F, Z2, Z2 + .55, exM.timber, g);                    // small landing towards the pool path
+});
+
+extOpt('flw', 'Wright: stone core (stretch)', { hide: true,
+  note: 'Wright anchors the extension on a sandstone core rising through the roof, like the hearth at Fallingwater, and lets the floors run out as thin horizontal shelves. The rounded glass becomes a square glass corner with timber mullions. The shelves overhang about 1 m north and east, sized for this latitude so they shade summer sun but let winter sun in. A stretch: the stone core needs its own footing and the shelves need steel outriggers.' }, g => {
+  box(-0.4, .55, 0, 8.7, 6.45, 7.65, exM.stone, g);                                    // sandstone core, up through the terrace like a chimney
+  glassPanel(.55, 2.84, .1, 2.8, 9.2, 9.24, g); glassPanel(.55, 2.84, 3.05, 5.7, 9.2, 9.24, g);   // square glass corner
+  glassPanel(-0.02, .02, .1, 2.8, 7.65, 9.24, g); glassPanel(-0.02, .02, 3.05, 5.7, 7.65, 9.24, g);
+  for (let x = .55; x <= 2.9; x += .58) box(x - .03, x + .03, 0, 5.8, 9.18, 9.26, exM.bronze, g);
+  for (let z = 7.65; z <= 9.3; z += .55) box(-0.04, .04, 0, 5.8, z - .03, z + .03, exM.bronze, g);
+  box(-1.0, 3.4, 2.82, 3.02, 6.45, 10.25, exM.pale, g);                                // floor shelf
+  box(-1.0, 3.6, 5.8, 6.12, 6.45, 10.3, exM.pale, g);                                  // roof shelf (terrace edge)
+  box(-0.95, -0.7, 6.12, 6.75, 7.65, 10.3, exM.stone, g); box(-0.95, 2.6, 6.12, 6.75, 10.05, 10.3, exM.stone, g);   // low stone parapet at the corner
+});
+
+extOpt('hadid', 'Hadid: one ribbon (minimal)', { hide: true,
+  note: 'The smallest change that is still unmistakably Hadid: the extension keeps its footprint and two floors, but the corner widens to a 2 m curve in frameless glass, and one continuous white ribbon runs along the roof edge, curls down round the corner and comes back as the floor edge. No new cantilevers past about 0.3 m; the ribbon is a lightweight GRC skin on brackets. All other walls unchanged.' }, g => {
+  const R = 2.0, O = [[0, BD]];
+  for (let i = 0; i <= 16; i++) { const t = Math.PI - (i / 16) * Math.PI / 2; O.push([R + R * Math.cos(t), PF - R + R * Math.sin(t)]); }
+  O.push([PX + .02, PF]);
+  for (let i = 0; i < O.length - 1; i++) { const [x0, z0] = O[i], [x1, z1] = O[i + 1], L = Math.hypot(x1 - x0, z1 - z0) + .02;
+    const p = new THREE.Mesh(new THREE.BoxGeometry(L, 5.6, .03), mats.glass); p.position.set((x0 + x1) / 2, 2.9, (z0 + z1) / 2); p.rotation.y = Math.atan2(-(z1 - z0), x1 - x0); g.add(p); }
+  // the ribbon: roof edge -> down round the corner -> floor edge, one continuous band
+  const path = new THREE.CatmullRomCurve3([
+    V(9.0, 5.95, PF + .22), V(5.0, 5.95, PF + .26), V(2.6, 5.9, PF + .28), V(1.2, 5.55, PF + .1), V(.25, 4.7, PF - .9),
+    V(-.12, 3.9, PF - 2.1), V(.05, 3.25, PF - 1.2), V(.9, 2.98, PF + .05), V(2.6, 2.9, PF + .28), V(5.0, 2.9, PF + .26), V(9.0, 2.9, PF + .22)], false, 'centripetal', .5);
+  const sh = new THREE.Shape(); sh.moveTo(-.14, -.32); sh.lineTo(.14, -.32); sh.lineTo(.14, .32); sh.lineTo(-.14, .32); sh.lineTo(-.14, -.32);
+  const rg = new THREE.ExtrudeGeometry(sh, { steps: 240, bevelEnabled: false, extrudePath: path });
+  const rib = new THREE.Mesh(rg, exM.white); rib.castShadow = rib.receiveShadow = true; g.add(rib);
+  box(0, .3, 0, 5.8, BD, PF - R, exM.white, g);                                        // white east wall strip where the glass meets the brick
+});
+
+extOpt('ando', 'Ando: top-lit room at the back', { hide: false, view: { p: [14, 9.5, -6], t: [6.5, 4, -1.5] },
+  note: 'At the back, where the house already shades everything, so no north sun is lost. A small fair-faced concrete room fills the sunken yard behind the main floor, west of the study (about 9 m²). Its roof becomes part of the stone terrace, and a glass slot along the house wall washes daylight down the concrete: Ando\'s light, not the north sun. Little digging, because the yard is already cut. The concrete roof carrying the terrace is real structure, so it\'s a stretch rather than minor.' }, g => {
+  const X1 = 6.8, X2 = 9.7, Z1 = -3.25, Z2 = -0.02;
+  box(X1, X2, 2.9, 5.68, Z1, Z1 + .25, desMat.conc, g); box(X1, X1 + .25, 2.9, 5.68, Z1, Z2, desMat.conc, g); box(X2 - .25, X2, 2.9, 5.68, Z1, Z2, desMat.conc, g);   // concrete walls
+  box(X1, X2, 5.56, 5.8, Z1, Z2 - .6, mats.stone, g);                                   // roof = stone terrace paving
+  box(X1 + .25, X2 - .25, 5.62, 5.66, Z2 - .6, Z2, mats.glass, g);                      // light slot along the house wall
+  box(X1, X2, 5.66, 5.9, Z2 - .62, Z2 - .58, desMat.conc, g);                            // slot upstand
+  box(X1 + .9, X2 - .9, 3.0, 5.0, Z1 - .01, Z1 + .02, mats.glass, g);                   // one tall narrow window to the south yard
+});
+
+var extOn = '';   // var: read by setState during start-up
+function setExt(k) {
+  if (S.state !== 'after') setState('after');
+  for (const d of Object.values(EXT)) d.g.visible = false;
+  extShell.forEach(o => o.visible = true);
+  extOn = k && EXT[k] ? k : '';
+  if (extOn) { const d = EXT[extOn]; d.g.visible = true; if (d.hide) extShell.forEach(o => o.visible = false); if (d.view) fly(d.view); }
+  document.querySelectorAll('#extRow button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.e === extOn)));
+  const n = $('extNote'); n.textContent = extOn ? EXT[extOn].note : ''; n.hidden = !extOn;
+}
+{ const row = $('extRow');
+  const add = (k, label, title) => { const b = document.createElement('button'); b.className = 'btn'; b.dataset.e = k; b.textContent = label; if (title) b.title = title; b.setAttribute('aria-pressed', String(k === '')); b.addEventListener('click', () => setExt(k)); row.appendChild(b); };
+  add('', 'Yours', 'Your extension as designed');
+  for (const [k, d] of Object.entries(EXT)) add(k, d.name);
+}
+window.homerExt = setExt; window.homerExtGroups = EXT;
 
 // ---------- camera readout: exact, shareable viewpoints ----------
 const AHD0 = 23.0;   // model y = 0 (studio floor) in metres AHD: Homer St footpath (y -5.5) sits at ~17.5 m AHD on the NSW 5 m elevation grid and 2 m contours
