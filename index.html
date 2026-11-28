@@ -474,7 +474,7 @@ const HANDLE = { x1: -0.95, x2: 1.85 };          // 2.8 m access strip down the 
 const backKerb = x => -49.6 + 0.16 * x;           // north kerb of the back street, which runs at an angle
 const pathY = x => x < 3.9 ? -3.4 : x > 10.4 ? -2.6 : -3.4 + .8 * (x - 3.9) / 6.5;
 const ground = (x, z) => ground0(x, z > 6.2 ? Math.max(6.2, z - FZ) : z);
-const POOL_STAIR = x => 5.8 + 2.3 * Math.max(0, Math.min(1, (5.5 - x) / 3.6));   // stair along the pool wall: 5.8 at the footbridge landing, pool level at X 1.9
+const POOL_STAIR = x => 5.8 + 2.3 * Math.max(0, Math.min(1, (7.5 - x) / 3.6));   // stair along the pool wall: 5.8 on the stone area at X 7.5, pool level at X 3.9
 const WCOR = z => z >= 0 ? 2.85 * (6.4 - z) / 6.4 : 2.85 + 1.75 * Math.min(1, -z / 3.3);   // west corridor: 0 at the front porch, main-floor back-door level at the back wall, 4.6 at the foot of the stone steps (Z -3.3)
 function ground0(x, z) {
   let h;
@@ -1098,7 +1098,7 @@ box(4.35, 13.25, POOL_Y - 1.4, POOL_Y - .12, -11.5, -7.0, mats.water);
 box(2.05, 13.55, POOL_Y - .3, POOL_Y, -7.0, -6.12, mats.pebble);                // pebble edge along the north side, under 1 m (2021 photo 9)
 const poolWall = M({ color: 0xf1efe9 });
 box(2.3, 13.55, STONE_Y, POOL_Y - .3, -6.3, -6.12, poolWall);                     // white rendered pool wall facing the stone area (photo B), railing on top
-box(7.05, 8.15, 6.75, 7.55, -6.1, -6.08, mats.water); box(7.0, 8.2, 6.7, 7.6, -6.12, -6.1, mats.pole);   // window into the pool
+box(9.05, 10.15, 6.75, 7.55, -6.1, -6.08, mats.water); box(9.0, 10.2, 6.7, 7.6, -6.12, -6.1, mats.pole);   // window into the pool
 box(13.45, 13.6, STONE_Y, POOL_Y - .12, -11.85, -6.12, mats.conc);                  // west wall
 // back door (main plan: off the hall, under the study) opens onto the paved strip and half-round landing
 // stone area beneath the pool, level with the study floor; drop and lower yard between it and the house
@@ -1119,8 +1119,8 @@ ramp(9.85, 12.75, 0, 2.85, -3.3, 4.6, mats.path);                             //
 box(9.75, 9.85, 2.33, WCOR(-3.3), -3.3, -0.85, mats.sandstone);               // retaining wall between the lower yard and the corridor
 box(11.75, 13.3, WCOR(-3.3) - .2, 6.1, -3.38, -3.3, mats.sandstone);          // garden-bank face above the corridor
 // east of the footbridge: stairs down from the pool along the pool wall (aerial: rail along Z -5.3), shrubby bank below
-stepsX(5.5, STONE_Y, 1.9, POOL_Y, -6.12, -5.3, 13, mats.stone);
-box(0.9, 1.9, POOL_Y - .12, POOL_Y, -6.12, -5.3, mats.stone);                 // top landing, onto the paved strip east of the pool
+stepsX(7.5, STONE_Y, 3.9, POOL_Y, -6.12, -5.3, 13, mats.stone);
+box(2.9, 3.9, POOL_Y - .12, POOL_Y, -6.12, -5.3, mats.stone);                 // top landing, onto the pebble edge along the pool
 box(5.5, 6.6, 1.3, 5.62, -4.48, -4.4, mats.sandstone);                          // face under the footbridge landing
 { // planter retaining wall running diagonally under the study (aerial marker 1)
   const x0 = 5.55, z0 = -3.9, x1 = 1.8, z1 = -3.05, o = new THREE.Mesh(new THREE.BoxGeometry(Math.hypot(x1 - x0, z1 - z0), 1.05, .18), M({ color: 0xe9e6de }));
@@ -1139,7 +1139,7 @@ for (const x of [5.45, 6.25]) for (const z of [-3.0, -3.8]) box(x - .05, x + .05
 for (const [st, par] of [['tube', before], ['bars', after]]) {
   railing([[-0.5, 2.92, 0], [-0.5, 2.92, -0.8], [3.58, 2.92, -0.8], [3.76, 2.92, -1.4], [4.23, 2.92, -1.82], [4.68, 2.92, -1.9], [5.13, 2.92, -1.82], [5.6, 2.92, -1.4], [5.78, 2.92, -0.8], [6.6, 2.92, -0.8]], 1.0, st, par);   // strip and half-round landing
   railing([[6.6, 3.98, -3.3], [6.6, 3.98, -2.4]], 1.0, st, par);
-  railing([[5.45, STONE_Y, -4.42], [5.45, STONE_Y, -5.3], [1.9, POOL_Y, -5.3], [0.9, POOL_Y, -5.3]], 1.0, st, par);   // along the open side of the pool stair
+  railing([[5.45, STONE_Y, -4.42], [5.45, STONE_Y, -5.3]], 1.0, st, par); railing([[7.5, STONE_Y, -5.3], [3.9, POOL_Y, -5.3], [2.9, POOL_Y, -5.3], [2.9, POOL_Y, -6.12]], 1.0, st, par);   // along the open side of the pool stair
   railing([[6.3, STONE_Y, -4.42], [6.6, STONE_Y, -4.42], [6.6, STONE_Y, -3.32], [10.45, STONE_Y, -3.32], [10.45, STONE_Y, -4.9]], 1.0, st, par);   // north edge, then down the east side of the steps
   railing([[3.3, 7.95, -10.5], [3.3, GAR_Y, -14.4]], .9, 'tube3', par);
   railing([[5.45, STONE_Y, -2.62], [5.45, STONE_Y, -4.42]], 1.0, st, par); railing([[6.25, STONE_Y, -2.62], [6.25, STONE_Y, -4.42]], 1.0, st, par);
@@ -1764,6 +1764,7 @@ const desMat = {
   sandstone: M({ color: 0xc9ad80, roughness: .95 }),
   glassRail: M({ color: 0xbfd6dc, roughness: .05, transparent: true, opacity: .32, depthWrite: false }),
   pv: M({ color: 0x1b2433, roughness: .25, metalness: .4 }),
+  timberAlu: M({ color: 0xa8784b, roughness: .5, metalness: .2 }),   // timber-look aluminium: warm mid timber, satin
   chain: M({ map: canvasTex(64, 64, (g, w, h) => { g.clearRect(0, 0, w, h); g.strokeStyle = 'rgba(170,175,178,1)'; g.lineWidth = 2; for (let i = -w; i < w * 2; i += 10) { g.beginPath(); g.moveTo(i, 0); g.lineTo(i + h, h); g.stroke(); g.beginPath(); g.moveTo(i + h, 0); g.lineTo(i, h); g.stroke(); } }, 6), transparent: true, alphaTest: .3, side: THREE.DoubleSide }),
 };
 desMat.conc.map.repeat.set(.35, .35); desMat.chain.map.repeat.set(6, 6);
@@ -2198,11 +2199,11 @@ design('ando', 'Tadao Ando', {
   // ---------- back: a walled court open to the sky ----------
   const SY = 5.8, PY = 8.1;
   // pool wall faced in concrete, keeping the window into the pool
-  box(5.5, 13.55, SY, 6.7, -6.12, -6.02, C, g); box(5.5, 13.55, 7.6, PY, -6.12, -6.02, C, g);
-  box(5.5, 7.0, 6.7, 7.6, -6.12, -6.02, C, g); box(8.2, 13.55, 6.7, 7.6, -6.12, -6.02, C, g);
+  box(7.5, 13.55, SY, 6.7, -6.12, -6.02, C, g); box(7.5, 13.55, 7.6, PY, -6.12, -6.02, C, g);
+  box(7.5, 9.0, 6.7, 7.6, -6.12, -6.02, C, g); box(10.2, 13.55, 6.7, 7.6, -6.12, -6.02, C, g);
   // water channel at the foot of the pool wall, concrete curb
-  box(6.6, 11.6, SY, SY + .04, -6.02, -5.65, mats.water, g);
-  box(6.6, 11.6, SY, SY + .1, -5.65, -5.55, C, g);
+  box(7.6, 11.6, SY, SY + .04, -6.02, -5.65, mats.water, g);
+  box(7.6, 11.6, SY, SY + .1, -5.65, -5.55, C, g);
   box(8.2, 9.0, 5.68, SY, -5.6, -4.9, mats.stone, g);                 // planter filled with paving
   // long wall up the west boundary, past the court and the pool
   box(13.3, 13.6, 5.6, PY + 1.2, -11.85, -3.3, C, g);
@@ -2211,11 +2212,11 @@ design('ando', 'Tadao Ando', {
   box(5.3, 5.5, 5.4, SY + 1.0, -4.42, -2.6, C, g); box(6.2, 6.4, 5.4, SY + 1.0, -4.42, -2.6, C, g);
   box(5.4, 6.3, 5.4, 5.62, -4.4, -2.6, C, g);                        // deeper bridge beam
   // pool wall above the stair, faced in concrete step by step
-  for (let i = 0; i < 13; i++) { const xa = 5.5 - 3.6 * i / 13, xb = 5.5 - 3.6 * (i + 1) / 13, y = SY + (PY - SY) * (i + 1) / 13;
+  for (let i = 0; i < 13; i++) { const xa = 7.5 - 3.6 * i / 13, xb = 7.5 - 3.6 * (i + 1) / 13, y = SY + (PY - SY) * (i + 1) / 13;
     box(xb, xa, y, PY, -6.12, -6.02, C, g); }
-  box(2.3, 1.9 + .01, PY - .02, PY, -6.12, -6.02, C, g);
+  box(2.3, 3.9 + .01, PY - .3, PY, -6.12, -6.02, C, g);
   // solid concrete upstand on the open side of the pool stair
-  { const sh = new THREE.Shape(); [[5.5, 5.4], [5.5, SY + 1.0], [1.9, PY + 1.0], [0.9, PY + 1.0], [0.9, PY - .3], [1.9, PY - .3]].forEach(([x, y], i) => i ? sh.lineTo(x, y) : sh.moveTo(x, y));
+  { const sh = new THREE.Shape(); [[7.5, 5.4], [7.5, SY + 1.0], [3.9, PY + 1.0], [2.9, PY + 1.0], [2.9, PY - .3], [3.9, PY - .3]].forEach(([x, y], i) => i ? sh.lineTo(x, y) : sh.moveTo(x, y));
     const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: .2, bevelEnabled: false }), C); m.position.z = -5.3; m.castShadow = m.receiveShadow = true; g.add(m); }
   box(5.35, 5.55, 5.4, SY + 1.0, -5.3, -4.42, C, g);
   // pool coping in concrete over the old pebble edge
@@ -2778,8 +2779,8 @@ design('kuma', 'Kengo Kuma', {
 
   // ---- 6. back: a floating stick pergola over the stone terrace, its roof level with the pool edge ----
   const TY = 5.8, RY = 8.2;
-  for (const [x, z] of [[6.95, -3.65], [10.15, -3.65], [6.95, -5.85], [10.15, -5.85]]) S(x - .05, x + .05, TY, RY, z - .05, z + .05);
-  S(6.75, 10.35, RY - .12, RY, -3.7, -3.6); S(6.75, 10.35, RY - .12, RY, -5.9, -5.8);
+  for (const [x, z] of [[6.95, -3.65], [10.15, -3.65], [6.95, -5.15], [10.15, -5.15]]) S(x - .05, x + .05, TY, RY, z - .05, z + .05);
+  S(6.75, 10.35, RY - .12, RY, -3.7, -3.6); S(6.75, 10.35, RY - .12, RY, -5.2, -5.1);   // south beam kept clear of the pool stair below
   for (let x = 6.55; x < 10.6; x += .18) S(x, x + .045, RY, RY + .06, -6.0, -3.35);
   for (let z = -5.95; z < -3.3; z += .3) S(6.4, 10.75, RY + .06, RY + .12, z, z + .045);
 
@@ -2900,9 +2901,137 @@ design('sun', 'Yours, refined: Sun Planes on Brick', { short: 'Yours, refined', 
   for (const z of [-22.8, -27.2]) box(1.75, 1.87, G - .1, RF - .3, z - .06, z + .06, br, g);
   box(-.66, 1.87, RF - .48, RF - .3, ZC + .05, ZC + .4, br, g);                                       // edge beam at the lane end
   { const cx = .42, z0 = -18.1;   // one car shown in the front bay; the lane-end bay takes the second (tandem)
-    box(cx - .88, cx + .88, G + .43, G + 1.13, z0 - 4.3, z0, mats.car); box(cx - .78, cx + .78, G + 1.13, G + 1.58, z0 - 3.3, z0 - 1.1, mats.carGlass);
+    box(cx - .88, cx + .88, G + .43, G + 1.13, z0 - 4.3, z0, mats.car, g); box(cx - .78, cx + .78, G + 1.13, G + 1.58, z0 - 3.3, z0 - 1.1, mats.carGlass, g);
     for (const [dx, dz] of [[-.83, -.8], [.83, -.8], [-.83, -3.5], [.83, -3.5]]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.32, .32, .2, 14), mats.dark); w.rotation.z = Math.PI / 2; w.position.set(cx + dx, G + .4, z0 + dz); g.add(w); } }
 });
+
+// ---- vision: final ----
+{ // ---- Final: the owner's After plus the agreed pieces from the eight visions (BRIEF-FINAL.md) ----
+  // The After's dark bar railings (index.html railing(..., 'bars', after)): read off the model itself, so they follow any later change to
+  // index.html. Each rail segment is a 0.03 m top-rail rod with a 0.02 m bottom-rail rod 0.08 m above the floor line. The Juliet rails
+  // (never shown with the roof balcony) are left alone. Every segment comes back in fine light-grey steel on the same line.
+  const FIN_RAILS = [], railRegions = [], tops = [], bots = [];
+  after.traverse(o => { if (!o.isMesh || o.material !== mats.metal) return; for (let p = o; p; p = p.parent) if (p === balJul) return;
+    o.updateWorldMatrix(true, false);
+    if (o.isInstancedMesh) { const c = new THREE.Box3().setFromObject(o).getCenter(new THREE.Vector3()); railRegions.push([c.x - .05, c.x + .05, c.y - .05, c.y + .05, c.z - .05, c.z + .05]); return; }
+    const q = o.geometry.parameters; if (o.geometry.type !== 'CylinderGeometry' || q.radialSegments !== 4) return;
+    const a = new THREE.Vector3(0, -q.height / 2, 0).applyMatrix4(o.matrixWorld), b = new THREE.Vector3(0, q.height / 2, 0).applyMatrix4(o.matrixWorld);
+    if (Math.hypot(b.x - a.x, b.z - a.z) < .01) return;                                       // a post
+    (q.radiusTop > .025 ? tops : bots).push([a, b]); });
+  for (const [a, b] of tops) { const m = a.clone().lerp(b, .5);
+    const bot = bots.find(([c, d]) => { const n = c.clone().lerp(d, .5); return Math.hypot(n.x - m.x, n.z - m.z) < .03 && n.y < m.y; }); if (!bot) continue;
+    const h = m.y - bot[0].clone().lerp(bot[1], .5).y + .08, A = a.clone().setY(a.y - h), B = b.clone().setY(b.y - h);
+    FIN_RAILS.push([[A.toArray(), B.toArray()], h]);
+    railRegions.push([Math.min(A.x, B.x) - .08, Math.max(A.x, B.x) + .08, Math.min(A.y, B.y) + .02, Math.max(A.y, B.y) + h + .08, Math.min(A.z, B.z) - .08, Math.max(A.z, B.z) + .08]); }
+
+  design('final', 'Final: Brick, Blades and Pool Room', { short: 'Final', base: 'after', roof: true,
+    remove: [
+      [-1.25, 4.25, GAR_Y + 2.48, GAR_Y + 2.7, -13.3, -7.2],      // garage metal roof
+      [-1.25, 2.05, GAR_Y + 2.4, GAR_Y + 2.6, -20.6, -13.2],      // carport roof
+      [-.8, 1.8, GAR_Y - .05, GAR_Y + 2.15, -13.2, -13.05],       // roller door
+      ...[[-1.05, -20.3], [1.85, -20.3], [-1.05, -16.8], [1.85, -16.8]].map(([x, z]) => [x - .1, x + .1, GAR_Y - .05, GAR_Y + 2.5, z - .1, z + .1]),   // carport posts
+      [2.0, 4.1, GAR_Y - .35, GAR_Y + 2.55, -10.55, -7.35],       // the brick west room over the pool shelter (rebuilt in glass; its piers stay)
+      ...railRegions,
+    ],
+    note: 'This is your After, with the best pieces of the eight visions added. The tile hip roof stays. The face brick stays. Your After stays as it is, with its curve, its render and its charcoal fascia and frames. Its deck, its roof balcony and its concrete front stairs stay. The shade sail and the old timber-deck bits are gone, as in your After. Solar panels sit flat on the north face of the tile roof. A freestanding blade frame stands on the deck 0.95 m in front of the north glass and follows your curve. The idea is Murcutt\'s. Its slim timber-look aluminium posts carry two bands of fixed blades about 0.9 m deep. One band is at the main-floor head and one is at the upper line. Midwinter noon sun at 32.6 degrees reaches the whole of the glass. Midsummer noon sun at 79.5 degrees is kept off it. The west glass of the extension gets vertical timber-look aluminium fins, each turned 45 degrees. The idea is Kuma\'s and Murcutt\'s. The fins block the low west sun. They also screen the view from the neighbour to the west. North light passes between them. Every dark bar railing becomes a fine light-grey steel balustrade on the same line, after Murcutt. That covers the deck edge, the roof balcony, the entry stair, the long front stair and path, and the rails behind the house. At the back there is no new storey. The garage becomes a studio of about 35 m2, all at garage level. The brick garage walls are kept. They hold the entry, the kitchenette and the shower room. A clerestory strip of glass runs high on the garage\'s north wall, after Wright. The brick west room over the pool shelter becomes a glass pool room on the same brick piers, after Murcutt and Wright. It is glazed north to the house and west along the pool. Its west glass has the same angled fins as the house. The pool shelter under it stays exactly as it is, as a loggia. The stair down the garage wall stays. The studio grows south into the first carport bay in the same face brick, as in the earlier refined scheme. The old roller-door opening joins the bay to the garage. The entry door faces the car space. One low charcoal metal skillion roof covers the garage, the pool room and the new bay. It rises gently to the north. It has a 0.9 m eave over the north glass. It is no higher than 2.9 m above the garage floor. It does not run over the car space or the stair path. The car space is a concrete hardstand further south on the strip, for 2 cars in tandem. It has a light flat roof on slim timber-look aluminium posts on both sides, with no brick wall. That keeps about 2.6 m of the roughly 2.8 m strip clear. It is still reached up the strip from the back street. Taken away at the back: the garage metal roof, the roller door, the carport roof and its four posts, and the brick walls of the west room. Its brick piers stay. Building on the boundary means this likely needs a DA.',
+  }, g => {
+    const ta = desMat.timberAlu, st = desMat.steel;
+    const put = (mat, x, y, z, sx, sy, sz, ry = 0) => { const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), mat); m.position.set(x, y, z); m.rotation.y = ry; m.castShadow = m.receiveShadow = true; g.add(m); return m; };
+
+    // ---------- fine light-grey steel balustrades on the After's rail lines ----------
+    const postAt = new Set();
+    const fineRail = (pts, h) => { const bars = [];
+      for (let k = 0; k < pts.length - 1; k++) { const A = V(...pts[k]), B = V(...pts[k + 1]), L = A.distanceTo(B); if (L < .02) continue;
+        rod(A.clone().setY(A.y + h), B.clone().setY(B.y + h), .018, st, g, 8);        // thin top rail
+        rod(A.clone().setY(A.y + .08), B.clone().setY(B.y + .08), .01, st, g, 6);      // bottom rail
+        const n = Math.max(1, Math.round(L / 1.5));
+        for (let i = 0; i <= n; i++) { const P = A.clone().lerp(B, i / n), key = P.toArray().map(v => v.toFixed(2)).join(); if (postAt.has(key)) continue; postAt.add(key); rod(P, P.clone().setY(P.y + h), .02, st, g, 8); }
+        const nb = Math.floor(L / .1); for (let i = 1; i < nb; i++) bars.push(A.clone().lerp(B, i / nb)); }   // rods about 0.1 m apart
+      if (!bars.length) return;
+      const im = new THREE.InstancedMesh(new THREE.CylinderGeometry(.006, .006, h - .08, 5), st, bars.length), o = new THREE.Object3D();
+      bars.forEach((p, i) => { o.position.set(p.x, p.y + .08 + (h - .08) / 2, p.z); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
+      im.castShadow = true; g.add(im); };
+    for (const [pts, h] of FIN_RAILS) fineRail(pts, h);
+
+    // ---------- solar panels flat on the north face of the tile roof (as in the refined scheme) ----------
+    const pitch = Math.atan2(.75, (BD + .7) / 2), eave = BD + .35;
+    for (const [zc, xs] of [[6.2, [1.0, 2.75, 4.5, 6.25, 8.0]], [5.15, [2.75, 4.5, 6.25]]]) for (const x of xs) {
+      const p = new THREE.Mesh(new THREE.BoxGeometry(1.7, .04, 1.0), desMat.pv);
+      p.position.set(x + .85, 8.5 + (eave - zc) * Math.tan(pitch) + .07, zc); p.rotation.x = pitch; p.castShadow = true; g.add(p); }
+
+    // ---------- north: freestanding blade frame on the deck, 0.95 m off the glass, following the front and the curve ----------
+    const FO = .95, EC = [EXr, PF - EXr];                                   // the curve's centre
+    const line = o => { const p = frontOutline(o).slice(1, -1); p[0] = [BW - .05, PF + o]; return p; };   // front + curve, stopping at the west corner
+    const at = (t, o) => [EC[0] + Math.cos(t) * (EXr + o), EC[1] + Math.sin(t) * (EXr + o)];
+    const posts = [[BW - .15, PF + FO], [7.75, PF + FO], [5.1, PF + FO], [2.45, PF + FO], at(Math.PI * .75, FO), at(Math.PI, FO)];
+    const arms = [[[BW - .15, PF], posts[0]], [[7.75, PF], posts[1]], [[5.1, PF], posts[2]], [[2.45, PF], posts[3]], [at(Math.PI * .75, 0), posts[4]], [at(Math.PI, 0), posts[5]]];
+    const TOP = 5.97;
+    for (const [x, z] of posts) box(x - .05, x + .05, 0, TOP, z - .05, z + .05, ta, g);   // slim posts standing on the deck
+    const band = yTop => {
+      D.wall(line(FO), yTop - .14, .14, .07, ta, g);                                   // edge beam along the post line
+      for (let o = .1; o < FO - .08; o += .16) D.wall(line(o), yTop - .05, .03, .11, ta, g);   // fixed horizontal blades
+      for (const [a, b] of arms) D.wall([a, b], yTop - .14, .14, .06, ta, g);            // arms back to the slab edge
+    };
+    band(2.98);    // main-floor head line
+    band(TOP);     // upper line
+
+    // ---------- west: vertical fins over the extension's west glass, each turned 45 degrees (face looks north-west to south-east) ----------
+    const fins = (x, z1, z2, yb, yt) => {
+      for (let z = z1 + .1; z <= z2 - .1 + 1e-6; z += .2) put(ta, x, (yb + yt) / 2, z, .15, yt - yb, .025, -Math.PI / 4);
+      for (const y of [yb - .06, yt]) box(x - .06, x + .06, y, y + .06, z1, z2, ta, g);    // head and sill channels
+    };
+    fins(BW + .14, BD + .05, PF + .05, 2.96, 5.76);
+
+    // ================= back of the site: one level at garage level =================
+    const G = GAR_Y, bz = garageBrick, ZB = -17.6, ZC = -28;
+    // the one roof: a low charcoal metal skillion over the garage, the pool room and the new bay, rising gently north to G + 2.9
+    const ZS = -17.75, ZN = -6.5, RS = G + 2.65, RN = G + 2.9, TH = .15, k = (RN - RS) / (ZN - ZS);
+    const rT = z => RS + k * (z - ZS), rU = z => rT(z) - TH;
+    { const pts = [[-1.15, ZN], [4.3, ZN], [4.3, -10.6], [2.08, -10.6], [2.08, -13.1], [1.95, -13.1], [1.95, ZS], [-1.15, ZS]];
+      const sh = new THREE.Shape(); pts.forEach(([x, z], i) => i ? sh.lineTo(x, -z) : sh.moveTo(x, -z));
+      const geo = new THREE.ExtrudeGeometry(sh, { depth: TH, bevelEnabled: false }); geo.rotateX(-Math.PI / 2);
+      const P = geo.attributes.position; for (let i = 0; i < P.count; i++) P.setY(i, P.getY(i) + rT(P.getZ(i)) - TH);
+      geo.computeVertexNormals(); const m = new THREE.Mesh(geo, mats.metal); m.castShadow = m.receiveShadow = true; g.add(m); }
+    // brick made up from the old wall heads to the new roof (stepped under its gentle rise)
+    const makeUp = (x1, x2, z1, z2) => { for (let z = z1; z < z2 - 1e-6; z += .5) { const zb = Math.min(z2, z + .5); box(x1, x2, G + 2.5, rU(z), z, zb, bz, g); } };
+    makeUp(-1.05, 2.05, -13.1, -7.4);                                           // over the kept garage
+    // the garage's north wall: a clerestory strip of glass high up, under the roof
+    { const y1 = G + 1.85, y2 = rU(-7.4) - .02, x1 = -.9, x2 = 1.9;
+      box(x1, x2, y1, y2, -7.4, -7.385, mats.carGlass, g); D.glass([[x1, -7.37], [x2, -7.37]], y1, y2 - y1, g);
+      for (const y of [y1 - .05, y2]) box(x1 - .05, x2 + .05, y, y + .05, -7.4, -7.33, ta, g);
+      for (let i = 0; i <= 3; i++) { const x = x1 + (x2 - x1) * i / 3; box(x - .03, x + .03, y1, y2, -7.4, -7.33, ta, g); } }
+    // the west room over the pool shelter becomes a glass pool room on the same brick piers: glass north and west, brick south
+    box(2.05, 4.05, G - .3, G, -10.5, -7.4, bz, g);                              // floor edge on the piers, in the same brick
+    box(2.07, 4.03, G, G + .02, -10.48, -7.42, mats.floorMain, g);
+    box(2.05, 4.05, G, rU(-10.5), -10.5, -10.27, bz, g);                          // south wall (above the stair foot)
+    D.glass([[2.05, -7.43], [4.06, -7.43]], G, rU(-7.43) - G, g);
+    D.glass([[4.06, -7.43], [4.06, -10.27]], G, rU(-7.43) - G, g);
+    for (const [x, z] of [[2.1, -7.43], [3.05, -7.43], [4.03, -7.43], [4.03, -8.85], [4.03, -10.27]]) box(x - .035, x + .035, G, rT(z) - TH, z - .035, z + .035, ta, g);
+    box(2.05, 4.08, G, G + .05, -7.47, -7.39, ta, g); box(4.01, 4.09, G, G + .05, -10.27, -7.43, ta, g);
+    fins(4.2, -10.35, -7.45, G + .06, rU(-7.45) - .02);                          // the same angled fins on the west glass
+    // the studio grows south into the first carport bay, in the same face brick; the old roller-door opening joins it to the garage
+    box(-1.05, -.82, G, G + 2.5, ZB, -13.1, bz, g);                              // east, on the boundary
+    box(1.62, 1.85, G, G + 2.5, ZB, -13.1, bz, g);                               // west, to the stair path
+    box(-1.05, 1.85, G, G + 2.5, ZB, ZB + .23, bz, g);                           // south, facing the car space
+    makeUp(-1.05, -.82, ZB, -13.1); makeUp(1.62, 1.85, ZB, -13.1); box(-1.05, 1.85, G + 2.5, rU(ZB), ZB, ZB + .23, bz, g);
+    box(-.55, .4, G + .02, G + 2.12, ZB - .03, ZB, ta, g);                       // entry door, facing the car space
+    box(-.61, .46, G + 2.12, G + 2.18, ZB - .05, ZB, ta, g); for (const x of [-.61, .4]) box(x, x + .06, G, G + 2.12, ZB - .05, ZB, ta, g);
+    // the stair path: a level concrete path at garage level from the car space to the head of the kept stair, fine steel rail to the garden
+    const slab = M({ color: 0xb4b0a7, roughness: .92 });
+    box(1.85, 3.3, G - 1.9, G - .04, ZB - 1.2, -14.4, bz, g); box(1.85, 3.3, G - .04, G + .04, ZB - 1.2, -14.4, slab, g);
+    fineRail([[1.85, G + .04, ZB - 1.15], [3.25, G + .04, ZB - 1.15], [3.25, G + .04, -14.4]], 1.0);
+    // car space: a concrete hardstand on the strip for 2 cars in tandem, under a light flat roof on slim posts on both sides
+    box(-.95, 1.85, G - .3, G + .05, -24, ZB, slab, g);
+    { const z2 = ZC - .6, y2 = Math.min(ground(-.95, z2), ground(1.85, z2)) - .02; D.roofPlane(-.95, 1.85, -24, z2, G + .02, y2, .06, slab, g); }   // runs on at a gentle fall to meet the driveway ramp
+    const CR = G + 2.38, PXs = [-.9, 1.79];
+    for (const x of PXs) for (const z of [-18.0, -22.9, -27.7]) box(x - .045, x + .045, ground(x, z) - .05, CR - .14, z - .045, z + .045, ta, g);
+    for (const x of PXs) box(x - .06, x + .06, CR - .14, CR - .02, ZC, ZB - .15, ta, g);                 // edge beams
+    box(-1.0, 1.89, CR - .02, CR + .02, ZC - .05, ZB - .1, mats.metal, g);                                 // thin flat roof sheet
+    { const cx = .42, z0 = -18.3;   // one car shown in the front bay; the second parks in tandem behind it
+      box(cx - .88, cx + .88, G + .43, G + 1.13, z0 - 4.3, z0, mats.car, g); box(cx - .78, cx + .78, G + 1.13, G + 1.58, z0 - 3.3, z0 - 1.1, mats.carGlass, g);
+      for (const [dx, dz] of [[-.83, -.8], [.83, -.8], [-.83, -3.5], [.83, -3.5]]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.32, .32, .2, 14), mats.dark); w.rotation.z = Math.PI / 2; w.position.set(cx + dx, G + .4, z0 + dz); g.add(w); } }
+  });
+}
 
 // ---- switching between visions ----
 var desOn = '';   // var: setState() calls designOff() during start-up, before this line runs
@@ -2913,7 +3042,7 @@ function regionMeshes(regions, roots) {   // original meshes lying entirely insi
   for (const root of roots) root.traverse(o => { if (!o.isMesh || o.userData.isDepthPre) return; let p = o; while (p) { if (p === DES_GRP) return; p = p.parent; }
     const bb = boxOf(o), c = bb.getCenter(new THREE.Vector3());
     // old railings (tube rails, posts, chicken-wire infill) run long, past tight regions: they go when their CENTRE is inside a region
-    const loose = o.material === mats.railWhite || o.material === mats.mesh;
+    const loose = o.material === mats.railWhite || o.material === mats.mesh || o.material === mats.metal;   // mats.metal: the After's dark bar railings
     if (regions.some(([x1, x2, y1, y2, z1, z2]) => loose ? (c.x >= x1 && c.x <= x2 && c.y >= y1 && c.y <= y2 && c.z >= z1 && c.z <= z2)
       : (bb.min.x >= x1 && bb.max.x <= x2 && bb.min.y >= y1 && bb.max.y <= y2 && bb.min.z >= z1 && bb.max.z <= z2))) out.push(o); });
   return out;
