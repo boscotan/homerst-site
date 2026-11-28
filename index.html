@@ -469,7 +469,7 @@ function hipRoof(x1, x2, z1, z2, y, rise, mat, parent = common) {
 
 // ---------- terrain ----------
 const CAR = { x1: -0.9, x2: 2.35, z1: 13.8 };  // street car space at the far left (east) end of the house
-const GAR_Y = 9.5;    // garage, carport and back driveway level; stairs come down to the pool from a side gate in the carport
+const GAR_Y = 10.4;    // garage, carport and back driveway level; stairs come down to the pool from a side gate in the carport
 const HANDLE = { x1: -0.95, x2: 1.85 };          // 2.8 m access strip down the east side to the back street (Lot A DP389934)
 const backKerb = x => -49.6 + 0.16 * x;           // north kerb of the back street, which runs at an angle
 const pathY = x => x < 3.9 ? -3.4 : x > 10.4 ? -2.6 : -3.4 + .8 * (x - 3.9) / 6.5;
@@ -511,9 +511,9 @@ function ground0(x, z) {
   if (x >= 6.6 && x < 9.85 && z > -2.4 && z <= -0.85) h = 2.45;         // lower yard behind the main floor
   if (x > -1.6 && x <= 0.02 && z > 0.05 && z < 5.9) h = 2.85 * (5.9 - z) / 5.85 - .06;     // east side corridor: slopes up from the deck to the back strip
   if (((x >= 11.95 && z > -0.85) || (x >= 9.85 && z <= -0.85)) && x < 13.3 && z > -3.3 && z < 6.4) h = WCOR(z) - .06;   // west side corridor: slopes all the way up to the steps
-  if (x > 1.85 && x < 3.0 && z <= -7.4 && z > -11.9) h = 7.95;                                   // path beside the pool's east end
-  if (x > 1.85 && x < 3.0 && z <= -11.9 && z > -15.6) h = 7.95 + (GAR_Y - 7.95) * (-11.9 - z) / 3.7 - .25;     // carport stairs down to the pool
-  if (x > HANDLE.x1 - .05 && x < HANDLE.x2 + .05) { if (z < -5.5 && z >= -7.4) h = 7.95; else if (z < -7.4) h = GAR_Y; }   // garage, carport and driveway: dead level out to the back street
+  if (x > 2.05 && x < 4.05 && z <= -7.4 && z > -10.5) h = 7.95;                                   // path beside the pool's east end
+  if (x > 2.05 && x < 3.35 && z <= -10.5 && z > -14.4) h = 7.95 + (GAR_Y - 7.95) * (-10.5 - z) / 3.9 - .25;     // carport stairs down to the pool
+  if (x > HANDLE.x1 - .05 && x < HANDLE.x2 + .05) { if (z < -5.5 && z >= -7.4) h = 7.95; else if (z < -7.4) h = z > -24 ? GAR_Y : GAR_Y + (9.45 - GAR_Y) * Math.min(1, (-24 - z) / (-24 - backKerb(x))); }   // garage and carport level, then the driveway ramps gently down to the back street   // garage, carport and driveway: dead level out to the back street
   return h;
 }
 {
@@ -1092,10 +1092,10 @@ for (const m of [box(-0.4, BW + .45, 8.25, 8.5, BD + .3, BD + .4, mats.metal, af
 // fenced on its north and west edges where it drops to the terrace, sandstone outcrop along its south side.
 const POOL_Y = 8.1;   // stand at the pool and you see the house's roof line
 const STONE_Y = 5.8; // stone area under the pool = study floor, so the footbridge runs level
-box(2.3, 13.55, POOL_Y - .35, POOL_Y, -7.0, -6.7, mats.pebble); box(2.3, 13.55, POOL_Y - .35, POOL_Y, -11.8, -11.5, mats.pebble);
-box(2.3, 2.6, POOL_Y - .35, POOL_Y, -11.5, -7.0, mats.pebble); box(13.25, 13.55, POOL_Y - .35, POOL_Y, -11.5, -7.0, mats.pebble);
-box(2.6, 13.25, POOL_Y - 1.4, POOL_Y - .12, -11.5, -7.0, mats.water);
-box(2.3, 13.55, POOL_Y - .3, POOL_Y, -7.0, -6.12, mats.pebble);                // pebble edge along the north side, under 1 m (2021 photo 9)
+box(4.05, 13.55, POOL_Y - .35, POOL_Y, -7.0, -6.7, mats.pebble); box(4.05, 13.55, POOL_Y - .35, POOL_Y, -11.8, -11.5, mats.pebble);
+box(4.05, 4.35, POOL_Y - .35, POOL_Y, -11.5, -7.0, mats.pebble); box(13.25, 13.55, POOL_Y - .35, POOL_Y, -11.5, -7.0, mats.pebble);
+box(4.35, 13.25, POOL_Y - 1.4, POOL_Y - .12, -11.5, -7.0, mats.water);
+box(2.05, 13.55, POOL_Y - .3, POOL_Y, -7.0, -6.12, mats.pebble);                // pebble edge along the north side, under 1 m (2021 photo 9)
 const poolWall = M({ color: 0xf1efe9 });
 box(2.3, 13.55, STONE_Y, POOL_Y - .3, -6.3, -6.12, poolWall);                     // white rendered pool wall facing the stone area (photo B), railing on top
 box(7.05, 8.15, 6.75, 7.55, -6.1, -6.08, mats.water); box(7.0, 8.2, 6.7, 7.6, -6.12, -6.1, mats.pole);   // window into the pool
@@ -1132,7 +1132,7 @@ box(6.6, 9.85, 3.98, 5.68, -3.38, -3.3, mats.sandstone);                       /
 box(6.6, 9.75, 3.86, 3.98, -3.3, -2.4, mats.stone); box(6.6, 9.75, 2.45, 3.86, -2.48, -2.4, mats.sandstone);   // middle terrace and its retaining wall
 box(6.6, 9.75, 2.33, 2.45, -2.4, -0.85, mats.stone); box(6.6, 6.68, 1.3, 3.98, -3.3, -0.85, mats.sandstone);   // lower yard behind the main floor
 box(13.3, 13.45, STONE_Y, 7.3, -6.3, -3.3, mats.sandstone);                   // west boundary retaining wall, lattice fence above
-for (let i = 0; i < 8; i++) { const z0 = -11.9 - i * .4625, y = 7.95 + (i + 1) * (GAR_Y - 7.95) / 8; box(1.95, 2.9, y - .2, y, z0 - .4625, z0, mats.stone); }   // 8 treads down to the pool from the carport's side gate
+for (let i = 0; i < 14; i++) { const z0 = -10.5 - i * (3.9 / 14), y = 7.95 + (i + 1) * (GAR_Y - 7.95) / 14; box(2.1, 3.3, y - .2, y, z0 - 3.9 / 14, z0, mats.stone); }   // 14 treads down the garage's west wall from the carport end to the shelter beside the pool
 // footbridge: straight and level out of the study's back door onto the stone area
 box(5.4, 6.3, 5.62, STONE_Y, -4.4, -2.6, mats.conc);                          // about 1.8 m long on the aerial
 for (const x of [5.45, 6.25]) for (const z of [-3.0, -3.8]) box(x - .05, x + .05, 1.3, 5.62, z - .05, z + .05, mats.railWhite);
@@ -1141,7 +1141,7 @@ for (const [st, par] of [['tube', before], ['bars', after]]) {
   railing([[6.6, 3.98, -3.3], [6.6, 3.98, -2.4]], 1.0, st, par);
   railing([[5.45, STONE_Y, -4.42], [5.45, STONE_Y, -5.3], [1.9, POOL_Y, -5.3], [0.9, POOL_Y, -5.3]], 1.0, st, par);   // along the open side of the pool stair
   railing([[6.3, STONE_Y, -4.42], [6.6, STONE_Y, -4.42], [6.6, STONE_Y, -3.32], [10.45, STONE_Y, -3.32], [10.45, STONE_Y, -4.9]], 1.0, st, par);   // north edge, then down the east side of the steps
-  railing([[2.95, 7.95, -11.9], [2.95, GAR_Y, -15.6]], .9, 'tube3', par);
+  railing([[3.3, 7.95, -10.5], [3.3, GAR_Y, -14.4]], .9, 'tube3', par);
   railing([[5.45, STONE_Y, -2.62], [5.45, STONE_Y, -4.42]], 1.0, st, par); railing([[6.25, STONE_Y, -2.62], [6.25, STONE_Y, -4.42]], 1.0, st, par);
   railing([[2.3, POOL_Y, -6.2], [13.5, POOL_Y, -6.2], [13.5, POOL_Y, -11.8]], 1.0, 'tube3', par);   // pool fence on top of the white wall
 }
@@ -1152,12 +1152,16 @@ for (let i = 0; i < 14; i++) { const x = 3.05 + i * .75, h = .4 + rnd() * 1.1, m
 box(HANDLE.x1, 2.25, POOL_Y - .1, POOL_Y + .02, -7.4, -5.9, mats.path);
 const garageBrick = M({ map: brickTex.clone() }); garageBrick.map.needsUpdate = true; garageBrick.map.repeat.set(1.4, 1.2);
 // garage 5.7 x 3.1 m beside the pool (site plan), face brick, flat roof (grey on the aerial), door facing south
-box(-1.05, 2.05, 9.5, 12, -13.1, -7.4, garageBrick);
-box(-1.2, 2.2, 12, 12.15, -13.25, -7.25, mats.metal);
-box(-0.75, 1.75, 9.5, 11.6, -13.16, -13.1, mats.neighbour);               // roller door
+box(-1.05, 2.05, GAR_Y, GAR_Y + 2.5, -13.1, -7.4, garageBrick);
+box(2.05, 4.05, GAR_Y - .3, GAR_Y + 2.5, -10.5, -7.4, garageBrick);          // the garage structure reaches 2 m west over the pool end ...
+box(3.8, 4.05, 7.95, GAR_Y - .3, -10.5, -10.25, garageBrick); box(3.8, 4.05, 7.95, GAR_Y - .3, -7.65, -7.4, garageBrick);   // ... on two brick piers
+box(2.05, 3.8, 7.85, 7.95, -10.5, -7.4, mats.path);                           // sheltered paving under it, at pool level; the pool starts beyond the shelter
+box(1.95, 2.05, 7.95, GAR_Y, -14.4, -7.4, garageBrick);                       // garage's west wall face, down to pool level beside the stairs
+box(-1.2, 4.2, GAR_Y + 2.5, GAR_Y + 2.65, -13.25, -7.25, mats.metal);
+box(-0.75, 1.75, GAR_Y, GAR_Y + 2.1, -13.16, -13.1, mats.neighbour);               // roller door
 // carport behind it (dark roof on the aerial), then the concrete driveway south to the back street
-box(-1.2, 2.0, 11.95, 12.05, -20.5, -13.25, mats.metal);
-for (const [x, z] of [[-1.05, -20.3], [1.85, -20.3], [-1.05, -16.8], [1.85, -16.8]]) box(x - .06, x + .06, 9.5, 11.95, z - .06, z + .06, mats.pole);
+box(-1.2, 2.0, GAR_Y + 2.45, GAR_Y + 2.55, -20.5, -13.25, mats.metal);
+for (const [x, z] of [[-1.05, -20.3], [1.85, -20.3], [-1.05, -16.8], [1.85, -16.8]]) box(x - .06, x + .06, GAR_Y, GAR_Y + 2.45, z - .06, z + .06, mats.pole);
 box(HANDLE.x1, HANDLE.x2, GAR_Y, GAR_Y + .04, -23.6, -13.1, mats.path);   // driveway, level to the back street
 // lot boundary fences (Lot A DP389934, 878 m²)
 function fence(pts) {
@@ -1822,8 +1826,13 @@ design('hadid', 'Zaha Hadid Architects', {
     [-0.56, -0.44, -0.05, 2.05, 11.65, 11.75],   // shade sail post
     [-0.45, 10.85, 8.25, 8.55, -0.45, 6.85],     // hip roof fascia trims (the tiles go with roof: false)
     [2.2, 13.6, 8.0, 9.2, -11.9, -6.1],          // tube pool fence (replaced in glass where the new roof lands)
+    [-1.25, 4.25, 12.85, 13.1, -13.3, -7.2],     // garage: flat metal roof
+    [-0.8, 1.8, 10.35, 12.55, -13.2, -13.05],    // garage: roller door
+    [-1.25, 2.05, 12.8, 13.0, -20.6, -13.2],     // carport roof
+    [-1.13, -0.97, 10.35, 12.9, -20.38, -20.22], [1.77, 1.93, 10.35, 12.9, -20.38, -20.22],   // carport posts
+    [-1.13, -0.97, 10.35, 12.9, -16.88, -16.72], [1.77, 1.93, 10.35, 12.9, -16.88, -16.72],
   ],
-  note: 'One continuous surface, read off the slope. Behind the house the pool sits at almost exactly the height of the old roof eaves, so the tiled hip roof is replaced by a thin white shell that rises off the pool edge, lifts over the bedrooms and flies out past the north wall as a knife-edge eave (0.8 m at the west, about 1.2 m at the east corner, where it climbs like a wing tip). Its back edge is skewed: west of the footbridge it comes right down onto the pool edge and shelters the stone terrace; over the study it stops short as a lifted lip, so the study keeps its windows. The garden behind effectively runs onto the roof. A strip of clerestory glass between the top of the brick and the shell makes the roof float, and the bedrooms get vaulted ceilings. At the front a second surface does the work of the old deck, sail and parapet: it runs as a 0.9 m eave over the living-room glass, swings out at the east corner, folds down into a curved wall against the apartment block, and turns back into the deck floor, which flows out into two curved planted terraces down the garden. The three-storey brick box, the glass projection, the entry tower, the zig-zag stair and the gum all stay; the brick is left as found, the ground the new white surfaces move over. Removed: the tile roof and its fascia, the timber deck and railing, the shade sail, the tube pool fence. Sun: the eaves over north glass are 0.8 to 1.2 m deep and set well above the window heads, so the midwinter sun (32.6 degrees) reaches the full height of the living and bedroom glass and the high summer sun (79.5 degrees) is kept off. The north clerestory is under the roof eave too. The west glass gets a row of twisted white fins hung from the eave. The deck is open to the north; the folded wall closes only the east side, which the apartment block already shades.',
+  note: 'One continuous surface, read off the slope. Behind the house the pool sits at almost exactly the height of the old roof eaves, so the tiled hip roof is replaced by a thin white shell that rises off the pool edge, lifts over the bedrooms and flies out past the north wall as a knife-edge eave (0.8 m at the west, about 1.2 m at the east corner, where it climbs like a wing tip). Its back edge is skewed: west of the footbridge it comes right down onto the pool edge and shelters the stone terrace; over the study it stops short as a lifted lip, so the study keeps its windows. The garden behind effectively runs onto the roof. A strip of clerestory glass between the top of the brick and the shell makes the roof float, and the bedrooms get vaulted ceilings. At the front a second surface does the work of the old deck, sail and parapet: it runs as a 0.9 m eave over the living-room glass, swings out at the east corner, folds down into a curved wall against the apartment block, and turns back into the deck floor, which flows out into two curved planted terraces down the garden. The three-storey brick box, the glass projection, the entry tower, the zig-zag stair and the gum all stay; the brick is left as found, the ground the new white surfaces move over. Removed: the tile roof and its fascia, the timber deck and railing, the shade sail, the tube pool fence. Sun: the eaves over north glass are 0.8 to 1.2 m deep and set well above the window heads, so the midwinter sun (32.6 degrees) reaches the full height of the living and bedroom glass and the high summer sun (79.5 degrees) is kept off. The north clerestory is under the roof eave too. The west glass gets a row of twisted white fins hung from the eave. The deck is open to the north; the folded wall closes only the east side, which the apartment block already shades. At the back of the site the same thinking repeats on the far side of the pool. The garage\'s brick walls (including its 2 m west end over the pool) are kept as the ground floor of a self-contained studio apartment, about 38 m² inside: entry from the driveway through a glass door where the roller door was, shower room and kitchenette in the old garage, an internal stair, and a new main room on top with a curved glass wall bowing out 1 m toward the pool, looking north over the pool and the new house roof to the horizon. A white shell like the house\'s covers it with a 1 m eave, then swoops down south of the room to car height, runs on over the old carport and folds down the neighbour side as a pale concrete wall: the same roof-to-wall fold as the house\'s front corner. Under it is a built concrete deck for two cars in tandem, still reached straight up the access strip. The sheltered pool-level space under the garage\'s west end stays as the pool loggia, with a curved white bench. Removed at the back: the garage\'s metal roof, the roller door, the carport roof and its four posts. Sun: the studio sits south of the pool and the house, so it shades neither at midday; its north glass is under a 1 m eave and its west glass behind twisted fins. Cost: honestly high. A second curved shell plus a new upper floor on old garage walls (which will need checking and probably underpinning or a new steel frame inside) puts this in custom-build territory, on a site reached only by a narrow strip.',
 }, g => {
   const WH = M({ color: 0xf2f1ed, roughness: .3 }), WH2 = M({ color: 0xf2f1ed, roughness: .3, side: THREE.DoubleSide });
   const GREEN = M({ color: 0x6f8748, roughness: 1 });
@@ -1926,6 +1935,66 @@ design('hadid', 'Zaha Hadid Architects', {
   const t2 = curve([[8.7, 12.7], [7.0, 13.55], [5.0, 14.15], [3.4, 14.2], [2.3, 13.95]]);
   const t2back = curve([[8.7, 12.62], [7.4, 12.5], [4.6, 12.95], [3.4, 12.98], [2.3, 12.98]]);
   terrace(t2, t2back, -2.55);
+
+  // ================= 4. BACK OF THE SITE: the garage grows a studio, and one surface carries on south over the cars =================
+  // The garage's brick walls stay (ground floor: entry, shower room, kitchenette). A new room sits on them, cantilevered 1 m north toward
+  // the pool, under a white shell like the house's. South of the room the shell swoops down to car height, runs on over the old carport
+  // and folds down the east side into a concrete wall: the same roof-wall fold as the front corner of the house.
+  const GY = GAR_Y, SR = { xe: -0.85, xw: 4.1, zg: -6.45, zs: -13.4, fl: GY + 2.7 };          // studio room: east wall, west edge, north glass line, south wall, floor
+  const glassLine = x => SR.zg - .45 * Math.pow((x - 1.6) / 2.6, 2);          // north glass bows out toward the pool
+  // floor slab on the garage walls, carrying the 1 m cantilever
+  const roomPlan = [[SR.xe, SR.zs], [SR.xw, SR.zs], ...Array.from({ length: 13 }, (_, i) => { const x = SR.xw - (SR.xw - SR.xe) * i / 12; return [x, glassLine(x)]; })];
+  D.poly(roomPlan, SR.fl, .25, WH, g);
+  // the shell: rows from the north eave (z -5.4) to the south lip over the driveway (z -24.3); each row is a section across X
+  const BXE = z => z > -14 ? SR.xe : -0.7 + (SR.xe + .7) * sstep((z + 14) / 1.0 + 1);
+  const BXW = z => 2.7 + (SR.xw - 2.7) * sstep((z + 15.6) / 2.2);
+  const bTop = (x, z) => { const zz = z;
+    let y = zz > -13.6 ? GY + 5.75 + .35 * Math.sin(Math.PI * Math.max(0, Math.min(1, (-5.4 - zz) / 8.2))) : GY + 2.95 + 2.75 * (1 - sstep((-13.6 - zz) / 4.6));
+    if (zz < -22.5) y += .3 * sstep((-22.5 - zz) / 1.8);                       // south lip lifts toward the drive
+    return y + .25 * sstep((x - .5) / 2.5) * sstep((zz + 9) / 3.6); };          // west half of the north eave lifts toward the view
+  const bZN = x => glassLine(x) + 1.0 - .5 * Math.pow(Math.max(0, Math.abs(x - 1.6) - 1.7) / 0.85, 2);
+  const BNV = 96, BNU = 30, BK = 11, BR = 1.0, BTH = .28, fold = z => sstep((-14.4 - z) / 1.8);
+  { const top = [], bot = [];
+    for (let i = 0; i <= BNV; i++) { const v = i / BNV, rt = [], rb = [];
+      // z runs north->south; the north edge row follows the curved eave
+      const zrow = x => { const zn = bZN(x); return zn + (-24.3 - zn) * v; };
+      const pts = [];
+      for (let j = 0; j <= BNU; j++) {
+        // flat section point
+        const xf0 = BXE(zrow(SR.xe)), xw = BXW(zrow(SR.xw));
+        const xf = xf0 + (xw - xf0) * j / BNU, zf = zrow(xf), flat = [xf, bTop(xf, zf), zf];
+        // folded section point: wall up the east side from the slab, arc, then across
+        const zc = zrow(xf0), yc = bTop(xf0 + BR, zc), Lw = Math.max(0, yc - BR - (GY + .08)), La = BR * Math.PI / 2;
+        let fp;
+        if (j < BK) { const t = j / BK * (Lw + La);
+          fp = t < Lw ? [xf0, GY + .08 + t, zc] : (() => { const a = Math.PI - (t - Lw) / BR; return [xf0 + BR + BR * Math.cos(a), yc - BR + BR * Math.sin(a), zc]; })();
+        } else { const x = xf0 + BR + (xw - xf0 - BR) * (j - BK) / (BNU - BK); fp = [x, bTop(x, zc), zc]; }
+        const w = fold(zc); pts.push([flat[0] + (fp[0] - flat[0]) * w, flat[1] + (fp[1] - flat[1]) * w, flat[2] + (fp[2] - flat[2]) * w]);
+      }
+      for (let j = 0; j <= BNU; j++) { const a = pts[Math.max(0, j - 1)], b = pts[Math.min(BNU, j + 1)]; let tx = b[0] - a[0], ty = b[1] - a[1]; const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+        rt.push(pts[j]); const th = .1 + (BTH - .1) * sstep(v / .07); rb.push([pts[j][0] + ty * th, pts[j][1] - tx * th, pts[j][2]]); }
+      top.push(rt); bot.push(rb); }
+    shell(top, bot, WH); }
+  const bBot = (x, z) => bTop(x, z) - BTH - .02;
+  // studio room enclosure: curved north glass, west glass behind twisted fins, solid east and south walls, all up to the shell
+  const upTo = (pts, mat) => { for (let k = 0; k < pts.length - 1; k++) { const [x0, z0] = pts[k], [x1, z1] = pts[k + 1], h = Math.min(bBot(x0, z0), bBot(x1, z1)) - SR.fl;
+    if (mat) D.wall([[x0, z0], [x1, z1]], SR.fl, h, .2, mat, g); else D.glass([[x0, z0], [x1, z1]], SR.fl, h, g); } };
+  const gl = Array.from({ length: 15 }, (_, i) => { const x = SR.xe + .1 + (SR.xw - .1 - SR.xe - .1) * i / 14; return [x, glassLine(x)]; });
+  upTo(gl); for (let i = 1; i < gl.length - 1; i += 3) box(gl[i][0] - .03, gl[i][0] + .03, SR.fl, bBot(gl[i][0], gl[i][1]), gl[i][1] - .04, gl[i][1] + .04, WH, g);
+  upTo([[SR.xw - .1, glassLine(SR.xw - .1)], [SR.xw - .1, -10.2]]); upTo([[SR.xw - .1, -10.2], [SR.xw - .1, SR.zs]], WH);
+  upTo([[SR.xe + .1, glassLine(SR.xe + .1)], [SR.xe + .1, SR.zs]], WH); upTo([[SR.xe, SR.zs + .1], [SR.xw, SR.zs + .1]], WH);
+  for (let k = 0; k < 7; k++) { const z = glassLine(SR.xw) - .25 - k * .42; D.sheet(.45, 2.9, 0, .14, [SR.xw + .12, SR.fl + 1.45, z], [0, .3 + .08 * k, 0], WH2, g); }
+  // ground floor entry from the drive, where the roller door was: glass door and side light in a white frame, under the shell
+  box(-0.55, 1.6, GY, GY + 2.2, -13.13, -13.1, mats.glass, g);
+  for (const [x1, x2] of [[-0.62, -0.55], [0.45, 0.52], [1.6, 1.67]]) box(x1, x2, GY, GY + 2.2, -13.16, -13.08, WH, g);
+  box(-0.62, 1.67, GY + 2.2, GY + 2.28, -13.16, -13.08, WH, g);
+  // car space: a built concrete deck for two cars in tandem, with the fold's concrete wall on the neighbour side
+  D.poly([[-0.7, -13.15], [2.7, -13.15], [2.7, -24.3], [-0.7, -24.3]], GY + .08, .3, desMat.pale, g);
+  D.wall([[2.65, -14.6], [2.65, -24.2]], GY + .08, .45, .15, desMat.pale, g);     // low kerb on the garden side, past the pool stair
+  for (const z of [-18.6, -23.9]) box(-0.4, 2.4, GY + .08, GY + .1, z, z + .08, WH, g);   // bay lines
+  // the shelter under the garage's west end stays as the pool loggia: a white bench grows out of its brick back wall and curls round toward the pool
+  { const b = curve([[2.15, -10.35], [2.35, -9.2], [2.4, -8.2], [2.9, -7.55], [3.55, -7.5]].map(([x, z]) => [x, z - .55]), 24);
+    D.wall(b, 7.95, .45, .42, WH, g); }
 });
 
 // ---- vision: gehry ----
@@ -1937,8 +2006,12 @@ design('gehry', 'Frank Gehry', {
   remove: [
     [-0.6, 2.6, 1.85, 2.8, 6.48, 11.8],     // the shade sail (the front of the model sits in a frame shifted 0.55 m north)
     [-0.6, -0.4, -0.03, 2.05, 11.65, 11.76], // and its pole
+    [-1.25, 4.25, GAR_Y + 2.45, GAR_Y + 2.7, -13.3, -7.2],   // the garage's tin roof
+    [-0.8, 1.8, GAR_Y - .05, GAR_Y + 2.15, -13.2, -13.05],   // the roller door
+    [-1.25, 2.05, GAR_Y + 2.4, GAR_Y + 2.6, -20.55, -13.2],  // the carport roof
+    ...[[-1.05, -20.3], [1.85, -20.3], [-1.05, -16.8], [1.85, -16.8]].map(([x, z]) => [x - .07, x + .07, GAR_Y - .05, GAR_Y + 2.46, z - .07, z + .07]),   // and its four posts
   ],
-  note: 'Gehry did not knock down his Santa Monica bungalow: he kept it, ordinary as it was, and built a cheap new skin around it that the old house pokes through. This does the same here. The brick house, its tile roof, the white glass projection, the entry and the study all stay as they are; only the shade sail goes. The old deck stays, its railing now behind the new wall. A wall of plain galvanised corrugated iron wraps the house where the deck meets the garden. It stands tall at the north-east corner and against the cream block next door, where there is no sun to lose anyway, and slides down to balustrade height in front of the glass, so the north light is untouched. Out of the top of that wall a glass room with raw timber studs tumbles off the corner at the main level, tipped a few degrees as if it is falling: a north-and-east-facing breakfast room opened out of the living room by enlarging the existing window in the brick wall beside the glass projection into a doorway. Its corrugated lid overhangs the north glass by about 0.9 m, so it takes winter sun (32.6 degrees at noon) and shades itself in summer. A second, smaller tilted glass cube breaks through the hip roof as a skylight, cutting a hole in the tiles to light the middle of the upper floor. The west glass gets a raked chain-link screen on steel pipe that takes the edge off the afternoon sun (chain-link only blocks a fraction of it; a shade-cloth lining would be needed for real relief) and carries on up as the fence of a roof terrace on top of the projection. Behind, a warped chain-link canopy on pipe posts shades the stone terrace by the pool. Every new material is cheap and off the shelf: corrugated iron, chain-link, studs, ply and clear glass.',
+  note: 'Gehry did not knock down his Santa Monica bungalow: he kept it, ordinary as it was, and built a cheap new skin around it that the old house pokes through. This does the same here. The brick house, its tile roof, the white glass projection, the entry and the study all stay as they are; only the shade sail goes. The old deck stays, its railing now behind the new wall. A wall of plain galvanised corrugated iron wraps the house where the deck meets the garden. It stands tall at the north-east corner and against the cream block next door, where there is no sun to lose anyway, and slides down to balustrade height in front of the glass, so the north light is untouched. Out of the top of that wall a glass room with raw timber studs tumbles off the corner at the main level, tipped a few degrees as if it is falling: a north-and-east-facing breakfast room opened out of the living room by enlarging the existing window in the brick wall beside the glass projection into a doorway. Its corrugated lid overhangs the north glass by about 0.9 m, so it takes winter sun (32.6 degrees at noon) and shades itself in summer. A second, smaller tilted glass cube breaks through the hip roof as a skylight, cutting a hole in the tiles to light the middle of the upper floor. The west glass gets a raked chain-link screen on steel pipe that takes the edge off the afternoon sun (chain-link only blocks a fraction of it; a shade-cloth lining would be needed for real relief) and carries on up as the fence of a roof terrace on top of the projection. Behind, a warped chain-link canopy on pipe posts shades the stone terrace by the pool. At the back the same thing happens to the brick garage. Its walls stay, including the room that reaches 2 m west over the end of the pool on brick piers; its tin roof and roller door go, and the door opening is filled with ply and a timber front door off the driveway, so the old garage becomes the entry, bathroom, bedroom nook and stair of a standalone studio apartment. On top a corrugated-iron room lands on a new concrete slab, about 39 m2 upstairs (5.1 by 7.6 m) plus about 18 m2 in the old garage, roughly 55 m2 in all, under the 60 m2 granny-flat limit. Its roof rises to the north, it is blank to the apartment block on the east, its west glass looks down the length of the pool behind the same raked chain-link screen as the house, and its view north is a second tilted glass room, a cousin of the one on the house, tipping out over the pool end with a 0.9 m corrugated lid for an eave. The sheltered paving under the west room, beside the pool, is kept as it is and becomes the studio pool room, with a rough stud bench and a chain-link gate onto the stair that comes down beside it. The studio sits at the south-east end of the pool, so its midday shadow falls away from the water, and it is far too far south to touch the sun on the house. The tin carport becomes a concrete car room: slab, a solid east wall, a short west wall that leaves the gate to the pool stair open, and a concrete roof that carries the south end of the studio and gives it a small terrace behind a chain-link fence. It holds one car under cover and a second in tandem on the driveway behind it, reached from the back street as now. Every new material is cheap and off the shelf: corrugated iron, chain-link, studs, ply, clear glass and plain concrete for the car room. The concrete car room and the slab over the old garage are the real money at the back; the old garage footings, walls and the two piers over the shelter need an engineer to check them before they carry a second storey, and may need underpinning or a new steel frame inside.',
 }, g => {
   const CORR = desMat.corr, STUD = desMat.timber, PLY = desMat.ply, PIPE = desMat.steel;
 
@@ -2028,6 +2101,41 @@ design('gehry', 'Frank Gehry', {
   const posts = [[5.7, -3.45, 8.9], [11.4, -3.45, 7.8], [11.4, -6.15, 8.7], [5.7, -6.15, 7.6]];
   for (const [x, z, y] of posts) rod(V(x, 5.68, z), V(x, y, z), .045, PIPE, g, 8);
   chainQuad([5.7, 8.9, -3.45], [11.4, 7.8, -3.45], [11.4, 8.7, -6.15], [5.7, 7.6, -6.15]);
+
+  // ======== 6. back of the site: the brick garage kept, a corrugated studio landed on it, a concrete car room beside it ========
+  const CONC = desMat.conc, GY = GAR_Y, GT = GAR_Y + 2.5, FL = GT + .25;   // car level; top of the old brick walls; new upper floor
+  // 6a. concrete car room on the old carport footprint: slab, a solid east wall against the neighbour, a short west wall, a concrete roof slab
+  box(-0.95, 1.85, GY, GY + .06, -20.5, -13.1, CONC, g);
+  box(-1.05, -0.85, GY, GT, -20.5, -13.1, CONC, g);                      // east wall
+  box(1.85, 2.05, GY, GT, -20.5, -15.2, CONC, g);                        // west wall, stopping short of the side gate to the pool stair
+  box(-1.05, 2.05, GT, FL, -20.5, -13.1, CONC, g);                       // roof slab: half under the studio, half its south terrace
+  // 6b. new floor slab over the old garage walls and its west room, reaching south over the stair to a concrete post
+  box(-1.05, 4.05, GT, FL, -15.0, -7.4, CONC, g);
+  box(3.8, 4.05, 8.6, GT, -15.0, -14.7, CONC, g);
+  // 6c. the old roller-door opening filled with ply and a timber front door: the apartment's own entry off the driveway
+  box(-0.75, 1.75, GY, GY + 2.1, -13.16, -13.1, PLY, g);
+  box(0.25, 1.15, GY, GY + 2.0, -13.2, -13.14, STUD, g);
+  // 6d. the corrugated studio on top: walls follow a roof that rises to the north
+  const ZS = -15.0, ZN = -7.4, YS = FL + 2.7, YN = FL + 3.75, XW = 4.05, XE2 = -1.05, ZG = -11.0, yAt = z => YS + (YN - YS) * (z - ZS) / (ZN - ZS);
+  corrWall(XE2, ZS, XE2, ZN, FL, YS, YN);                                 // east, blank to the apartment block
+  corrWall(XE2, ZS, XW, ZS, FL, YS, YS);                                  // south, to the terrace
+  corrWall(XW, ZS, XW, ZG, FL, YS, yAt(ZG));                              // west: solid at the back...
+  D.glass([[XW, ZG], [XW, ZN]], FL, 2.7, g);                              // ...then glass looking west down the pool
+  corrWall(XW, ZG, XW, ZN, FL + 2.7, yAt(ZG), YN);                        // corrugated above the glass, up to the rising roof
+  corrWall(XE2, ZN, XW, ZN, FL, YN, YN);                                  // north wall, mostly hidden behind the glass room
+  D.roofPlane(XE2 - .25, XW + .3, ZS - .3, ZN + .35, YS - .04, YN + .06, .08, CORR, g);
+  box(0.3, 1.5, FL, FL + 2.2, ZS - .04, ZS + .02, mats.glass, g);         // glass door out to the terrace
+  // raked chain-link screen off the west glass, as on the house
+  chainQuad([XW + .15, FL, ZG - .1], [XW + .15, FL, ZN - .1], [XW + .7, YN + .2, ZN - .35], [XW + .7, YN + .2, ZG - .1]);
+  // chain-link fence round the terrace on the car-room roof
+  chainQuad([-1.0, FL, -20.45], [2.0, FL, -20.45], [2.0, FL + 1.1, -20.6], [-1.0, FL + 1.1, -20.6]);
+  chainQuad([2.0, FL, -20.45], [2.0, FL, -15.0], [2.0, FL + 1.1, -15.0], [2.0, FL + 1.1, -20.6]);
+  // 6e. the north outlook: a glass room tipping off the studio over the pool end, cousin of the one on the house
+  tiltCube([1.4, FL + .05, -6.1], [0.11, -0.16, -0.08], 3.4, 2.6, 2.4, { back: true, lid: 0.9, bars: 2 });
+  rod(V(0.4, 8.1, -6.0), V(0.6, FL - .1, -5.6), .07, STUD, g, 6);         // a raw timber prop down to the paving by the pool
+  // 6f. the shelter under the garage's west room is kept as the studio's pool room; a raw stud bench and a chain-link gate onto the stair
+  box(2.15, 2.6, 7.95, 8.4, -10.3, -7.6, STUD, g);
+  chainQuad([2.1, 7.95, -10.5], [3.3, 7.95, -10.5], [3.3, 9.9, -10.5], [2.1, 9.9, -10.5]);
 });
 
 // ---- vision: ando ----
@@ -2053,8 +2161,13 @@ design('ando', 'Tadao Ando', {
     [0.8, 5.55, 5.75, 9.15, -5.4, -4.35],    // tube railing on the open side of the pool stair
     [2.2, 13.6, 8.0, 9.2, -6.3, -6.1],       // pool fence, north side
     [13.4, 13.6, 8.0, 9.2, -11.9, -6.1],     // pool fence, west side
+    [-1.25, 4.25, 12.85, 13.1, -13.3, -7.2], // metal garage roof (the studio slab replaces it)
+    [-0.8, 1.8, 10.35, 12.55, -13.2, -13.05],// roller door
+    [-1.25, 2.05, 12.8, 13.0, -20.55, -13.2],// carport roof
+    [-1.15, 1.95, 10.35, 12.9, -20.4, -16.7],// carport posts
+    [3.2, 3.4, 7.9, 11.4, -14.5, -10.4],     // tube rail down the pool stair (a concrete wall replaces it)
   ],
-  note: 'The brick house stays as it is, hip roof and all. Ando inserts concrete beside it rather than over it. At the front, a freestanding concrete frame stands 0.9 m off the glass: a wall on the east boundary screening the apartment block, a wall on the west side of the entry path, and a thin concrete eave and beam joining them at the projection roof line. Nothing solid goes in front of the north glass; the frame only sets the edge of the view, like a picture frame, and a strip of still water runs along the terrace edge to throw sky light back into the rooms. The old timber deck, sail and tube railings go; the terrace becomes concrete. You reach the door up the last flight between low concrete walls, under the canopy and along the lane between the west wall and the glass. Neither wall touches the old brick: a gap is left at each end so light slides down the house. The later lightweight parts (the projection walls, the fibro sunroom and study) are re-clad in thin concrete panels so the old brick reads against one new material. At the back, the stone terrace becomes a walled court open to the sky: the pool wall is faced in concrete, keeping its window into the water, a long concrete wall runs up the west boundary past the pool, concrete parapets and solid bridge and stair sides replace the tube rails, the pool gets a concrete coping and a frameless glass barrier, and a channel of water sits at the foot of the pool wall. Sun: the 0.9 m eave lets midwinter noon sun (32.6 degrees) reach almost the full height of the main-floor glass and keeps out summer noon sun (79.5 degrees). The west wall and canopy screen the projection\'s west glass. The east court is open to the sky; the apartment block already takes its early morning sun.',
+  note: 'The brick house stays as it is, hip roof and all. Ando inserts concrete beside it rather than over it. At the front, a freestanding concrete frame stands 0.9 m off the glass: a wall on the east boundary screening the apartment block, a wall on the west side of the entry path, and a thin concrete eave and beam joining them at the projection roof line. Nothing solid goes in front of the north glass; the frame only sets the edge of the view, like a picture frame, and a strip of still water runs along the terrace edge to throw sky light back into the rooms. The old timber deck, sail and tube railings go; the terrace becomes concrete. You reach the door up the last flight between low concrete walls, under the canopy and along the lane between the west wall and the glass. Neither wall touches the old brick: a gap is left at each end so light slides down the house. The later lightweight parts (the projection walls, the fibro sunroom and study) are re-clad in thin concrete panels so the old brick reads against one new material. At the back, the stone terrace becomes a walled court open to the sky: the pool wall is faced in concrete, keeping its window into the water, a long concrete wall runs up the west boundary past the pool, concrete parapets and solid bridge and stair sides replace the tube rails, the pool gets a concrete coping and a frameless glass barrier, and a channel of water sits at the foot of the pool wall. At the top of the site, the brick garage and its west room over the pool shelter are kept as the ground floor of a small standalone apartment, about 45 m2 inside: entry, stair, bathroom and kitchenette in the old garage. On top sits one fair-faced concrete room, 5.1 by 5.85 m, its side walls blank to the apartment block and the west sun, and its north face fully glazed under a 1 m concrete eave, looking over the pool and the house roof to the view. The pool shelter under the west end stays, now reached down the stair between the old brick and a new concrete wall, a descent into a shaded room at the water. The carport roof and posts, the metal garage roof, the roller door and the stair rail go. The carport becomes a walled concrete car court for two cars in tandem off the driveway. A concrete roof covers the first car; above it is a small court open to the sky, walled to the height of the studio, which the studio opens onto through glass. The walls sit just inside the strip boundaries, so the clear width is about 2.35 m: enough to park and get out, not to open doors wide. The apartment has its own door off the car court. Being south of the pool, it never shades the pool or the house. Cost: a new concrete floor on old brick walls means checking and probably underpinning the garage and its piers; off-form concrete is a premium trade; budget it as a new small dwelling, not a conversion. Sun: the 0.9 m eave lets midwinter noon sun (32.6 degrees) reach almost the full height of the main-floor glass and keeps out summer noon sun (79.5 degrees). The west wall and canopy screen the projection\'s west glass. The east court is open to the sky; the apartment block already takes its early morning sun.',
 }, g => {
   const C = desMat.conc;
   const TOP = 6.0;                       // one datum for the whole frame: the projection roof line
@@ -2106,10 +2219,35 @@ design('ando', 'Tadao Ando', {
     const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: .2, bevelEnabled: false }), C); m.position.z = -5.3; m.castShadow = m.receiveShadow = true; g.add(m); }
   box(5.35, 5.55, 5.4, SY + 1.0, -5.3, -4.42, C, g);
   // pool coping in concrete over the old pebble edge
-  box(2.3, 13.55, PY - .02, PY + .03, -7.0, -6.12, C, g); box(2.3, 13.55, PY - .02, PY + .03, -11.8, -11.5, C, g);
-  box(2.3, 2.6, PY - .02, PY + .03, -11.5, -7.0, C, g); box(13.25, 13.55, PY - .02, PY + .03, -11.5, -7.0, C, g);
+  box(2.05, 13.55, PY - .02, PY + .03, -7.0, -6.12, C, g); box(4.05, 13.55, PY - .02, PY + .03, -11.8, -11.5, C, g);
+  box(4.05, 4.35, PY - .02, PY + .03, -11.5, -7.0, C, g); box(13.25, 13.55, PY - .02, PY + .03, -11.5, -7.0, C, g);
   // pool barrier: frameless glass on the concrete coping
   D.wall([[2.3, -6.2], [13.3, -6.2]], PY, 1.2, .02, desMat.glassRail, g);
+  // ---------- top of the site: one concrete room over the old garage and its pool shelter, a walled car court behind ----------
+  const GY = GAR_Y, GT = GAR_Y + 2.5, FL = GT + .3, RT = GT + 3.2;   // garage floor, garage wall top, studio floor, studio roof
+  // ground: the brick garage and its west room over the pool shelter are kept: entry, stair, bathroom, kitchenette
+  box(-0.75, 0.65, GY, GY + 2.5, -13.14, -13.06, C, g); box(1.55, 1.75, GY, GY + 2.5, -13.14, -13.06, C, g);
+  box(0.65, 1.55, GY + 2.1, GY + 2.5, -13.14, -13.06, C, g);         // roller-door opening filled in concrete
+  box(0.65, 1.55, GY, GY + 2.1, -13.12, -13.08, mats.fDark, g);      // the studio's own front door, off the car court
+  // the pool shelter stays as it is; you now reach it down the stair between the old brick and a new concrete wall
+  box(3.3, 3.5, 7.9, GT, -14.4, -10.5, C, g);                         // stair wall: procession down into the shaded room at the water
+  box(2.05, 3.8, 7.95, 7.99, -10.5, -7.4, desMat.pale, g);            // shelter floor in concrete, level with the coping
+  // studio: one room, 5.1 x 5.85 m, over the garage and the shelter, north glass under a 1 m eave
+  box(-1.05, 4.05, GT, FL, -13.1, -6.25, C, g);                        // floor slab on the brick walls, cantilevered past the glass
+  box(-1.05, -0.85, GT, RT, -13.1, -6.25, C, g); box(3.85, 4.05, GT, RT, -13.1, -6.25, C, g);   // side walls: blank to the block and the west sun
+  box(-1.05, 4.05, RT - .25, RT, -13.1, -6.25, C, g);                  // roof slab
+  box(1.9, 3.85, FL, RT - .25, -13.1, -12.9, C, g);                     // south wall over the stair
+  D.glass([[-0.85, -7.25], [3.85, -7.25]], FL, RT - .25 - FL, g);      // full-height north glass over the pool to the house roof and the view
+  D.glass([[-0.85, -13.0], [1.9, -13.0]], FL, RT - .25 - FL, g);       // south glass onto the sky court
+  // car court: concrete walls just inside both boundaries of the strip, two cars in tandem;
+  // a concrete roof over the first car, and above it a court open to the sky, walled to the studio's height
+  D.wall([[-0.93, -13.1], [-0.64, -25.8]], GY - .4, 2.9, .2, C, g);
+  D.wall([[2.0, -14.5], [2.0, -18.0], [1.73, -18.1], [1.91, -25.8]], GY - .4, 2.9, .2, C, g);   // gap at the north end: the gate to the pool stair
+  box(-0.75, 1.82, GY, GY + .04, -24.0, -13.1, desMat.pale, g);       // concrete floor out to the drive
+  D.poly([[-0.83, -13.1], [1.9, -13.1], [1.9, -18.0], [1.63, -18.1], [1.69, -20.5], [-0.66, -20.5]], FL, .3, C, g);   // car roof = court floor
+  D.wall([[-0.93, -13.1], [-0.76, -20.5]], GT, RT - GT, .2, C, g);
+  D.wall([[2.0, -13.1], [2.0, -18.0], [1.73, -18.1], [1.79, -20.5]], GT, RT - GT, .2, C, g);
+  box(-0.86, 1.89, GT, RT, -20.7, -20.5, C, g);                         // blank south face to the lane
 });
 
 // ---- vision: flw ----
@@ -2127,8 +2265,13 @@ design('flw', 'Frank Lloyd Wright', {
     [10.3, 10.5, -0.1, 1.1, 11.1, 11.85],     // deck railing, west stub
     [-0.6, 2.6, -0.1, 2.78, 6.495, 11.76],    // shade sail and its pole
     [2.8, 10.45, 5.9, 6.25, 9.1, 9.35],       // low white parapet on the projection roof, replaced by the upper tray's parapet
+    [-1.25, 4.25, 12.85, 13.1, -13.3, -7.2],  // garage: flat metal roof (the studio floor tray replaces it)
+    [-0.8, 1.8, 10.35, 12.55, -13.2, -13.05], // garage: roller door (becomes the studio's front door and glass)
+    [-1.25, 2.05, 12.8, 13.0, -20.55, -13.2], // carport: thin steel roof
+    [-1.15, -0.95, 10.35, 12.9, -20.4, -20.2], [1.75, 1.95, 10.35, 12.9, -20.4, -20.2],
+    [-1.15, -0.95, 10.35, 12.9, -16.9, -16.7], [1.75, 1.95, 10.35, 12.9, -16.9, -16.7],   // carport: its four posts
   ],
-  note: 'Wright would keep the face brick and the house\'s three floors, and make it grow out of the sandstone by giving it a stone core and stretching every floor out over the slope as a horizontal tray. A sandstone pier rises at the open east corner, from the garden through all three levels and up through the eaves as a chimney. Off it, the old timber deck becomes a cantilevered concrete terrace with solid rounded parapets (the Fallingwater move), reaching about 3 m past the studio glass. At the main floor a thin plane runs round the glass projection 0.9 m deep, and at the upper floor the projection roof becomes a walled roof terrace that also projects 0.9 m. The terracotta hip roof is rebuilt at a flatter pitch and much broader, with a 1.0 m eave to the north and wider eaves east and west, so the house reads as layers of shelter. The white walls, sunroom and study go a light ochre to match the trays. The sun decides the depths: 0.9 to 1.0 m over every north window lets the 32.6 degree midwinter sun right in and keeps the 79.5 degree midsummer sun off. Nothing deep sits over north glass, which is not how Wright shaded his Prairie houses at 42 degrees north, but it is what he would do here. The west glass gets vertical timber fins. Removed: the old deck, its railings, the shade sail, the projection\'s low parapet and the old roof covering. Behind, the study keeps its walls and gets a thin ochre lid that overhangs like the main roof. Low sandstone ledge walls step the front garden down like rock shelves. The gum stays.',
+  note: 'Wright would keep the face brick and the house\'s three floors, and make it grow out of the sandstone by giving it a stone core and stretching every floor out over the slope as a horizontal tray. A sandstone pier rises at the open east corner, from the garden through all three levels and up through the eaves as a chimney. Off it, the old timber deck becomes a cantilevered concrete terrace with solid rounded parapets (the Fallingwater move), reaching about 3 m past the studio glass. At the main floor a thin plane runs round the glass projection 0.9 m deep, and at the upper floor the projection roof becomes a walled roof terrace that also projects 0.9 m. The terracotta hip roof is rebuilt at a flatter pitch and much broader, with a 1.0 m eave to the north and wider eaves east and west, so the house reads as layers of shelter. The white walls, sunroom and study go a light ochre to match the trays. The sun decides the depths: 0.9 to 1.0 m over every north window lets the 32.6 degree midwinter sun right in and keeps the 79.5 degree midsummer sun off. Nothing deep sits over north glass, which is not how Wright shaded his Prairie houses at 42 degrees north, but it is what he would do here. The west glass gets vertical timber fins. Removed: the old deck, its railings, the shade sail, the projection\'s low parapet and the old roof covering. Behind, the study keeps its walls and gets a thin ochre lid that overhangs like the main roof. Low sandstone ledge walls step the front garden down like rock shelves. The gum stays. At the back, the brick garage is kept as the ground floor of a small studio apartment, about 45 m2 inside over two levels (under the 60 m2 granny-flat limit). Downstairs the old garage holds the entry, shower room, kitchenette and stair, and its roller door becomes a timber front door with glass beside it. The garage\'s 2 m west room over the pool end becomes a pool room, glazed corner to corner on its west and north faces. The open shelter under it at pool level is kept as a loggia: brick piers as they are, a sandstone floor, a stone bench along the garage wall, and an ochre band at its edge in the line of the trays. Upstairs is one main room on a new ochre concrete tray that replaces the garage roof. The tray runs out 0.9 m north as a walled balcony and south as the solid roof of the car space. The room is brick to the south and east (the neighbour side) with a clerestory, and glass to the north and west, glass meeting glass at the corner, looking over the pool and the house roof to the view. A sandstone pier at its south-west corner rises from the garden through the eave as a chimney, the house\'s stone core repeated, under the same broad terracotta hip roof with a 1.0 m eave over the north glass. That lets the winter sun right in and keeps the summer sun out. It stands at the pool\'s east end, so it shades the pool only in early morning, never at midday. The carport\'s tin roof and posts go. In their place is a built car space: a laid sandstone wall on the boundary, a sandstone pier on the garden side, the concrete roof tray with a deep fascia, and a concrete deck with kerbs, for one car under cover and a second in tandem, still reached straight off the back street along the access strip. Honestly, this is a real second building: new footings for the pier and car wall, and a second storey over a garage whose walls and piers need checking before they carry it. Expect it to cost about as much as a modest new granny flat, plus the stone. At about 5 m over the driveway it will also need a careful planning case for overlooking.',
 }, g => {
   const ochre = M({ color: 0xd6c09a, roughness: .85 });
   const stone = desMat.sandstone, wood = desMat.timber;
@@ -2165,13 +2308,16 @@ design('flw', 'Frank Lloyd Wright', {
   D.wall(p2, 6.0, .9, .22, ochre, g);
 
   // ---- the roof: rebuilt flatter and much broader, terracotta kept, 1.0 m north eave ----
-  const rx1 = -1.25, rx2 = 13.3, rz1 = -1.0, rz2 = BD + 1.0, ey = 8.5;
-  hipRoof(rx1, rx2, rz1, rz2, ey, 0.8, mats.roof, g);
-  D.poly([[rx1, rz1], [rx2, rz1], [rx2, rz2], [rx1, rz2]], ey - .005, .05, ochre, g);   // soffit
-  box(rx1 - .06, rx2 + .06, ey - .2, ey + .06, rz2, rz2 + .06, ochre, g);   // fascia: one continuous line
-  box(rx1 - .06, rx2 + .06, ey - .2, ey + .06, rz1 - .06, rz1, ochre, g);
-  box(rx1 - .06, rx1, ey - .2, ey + .06, rz1, rz2, ochre, g);
-  box(rx2, rx2 + .06, ey - .2, ey + .06, rz1, rz2, ochre, g);
+  function broadRoof(x1, x2, z1, z2, ey, rise) {
+    hipRoof(x1, x2, z1, z2, ey, rise, mats.roof, g);
+    D.poly([[x1, z1], [x2, z1], [x2, z2], [x1, z2]], ey - .005, .05, ochre, g);   // soffit
+    box(x1 - .06, x2 + .06, ey - .2, ey + .06, z2, z2 + .06, ochre, g);   // fascia: one continuous line
+    box(x1 - .06, x2 + .06, ey - .2, ey + .06, z1 - .06, z1, ochre, g);
+    box(x1 - .06, x1, ey - .2, ey + .06, z1, z2, ochre, g);
+    box(x2, x2 + .06, ey - .2, ey + .06, z1, z2, ochre, g);
+  }
+  const ey = 8.5;
+  broadRoof(-1.25, 13.3, -1.0, BD + 1.0, ey, 0.8);
   box(BW, SW, 8.3, ey, 0.63, BD, ochre, g);                                 // frieze over the sunroom, up to the new soffit
 
   // ---- west glass: vertical timber fins against the afternoon sun ----
@@ -2181,6 +2327,60 @@ design('flw', 'Frank Lloyd Wright', {
   // ---- front garden: long sandstone ledge walls, like the rock shelves the house grows from ----
   box(-0.85, 8.6, -3.4, -1.6, 12.85, 13.45, stone, g);
   box(4.3, 13.6, -5.6, -3.9, 17.0, 17.6, stone, g);
+
+  // ================= the back of the site: the garage becomes a two-level studio, the carport a built car space =================
+  const GY = GAR_Y, FL = GAR_Y + 2.8, EV = FL + 2.55, XW = 4.05;
+  const dark = M({ color: 0x33302c, roughness: .6 }), band = M({ color: 0xb79a6c, roughness: 1 }), flag = M({ color: 0xa7896a, roughness: .9 });
+  // ground floor: the garage's brick walls are kept (entry, shower room, kitchenette, stair up); the roller-door opening
+  // becomes a timber front door with glass beside it, under the car-space roof
+  box(-0.75, 0.15, GY, GY + 2.1, -13.16, -13.08, wood, g);                   // front door
+  box(0.15, 1.75, GY + .9, GY + 2.1, -13.15, -13.1, mats.glass, g);          // side glass over a brick sill
+  box(0.15, 1.75, GY, GY + .9, -13.16, -13.1, garageBrick, g);
+  for (const x of [0.15, 0.95, 1.75]) box(x - .03, x + .03, GY, GY + 2.1, -13.18, -13.1, wood, g);
+  box(-0.8, 1.8, GY + 2.1, GY + 2.2, -13.18, -13.1, wood, g);
+  // the garage's 2 m west room over the pool becomes the pool room: glass on its west and north faces, corner to corner
+  box(XW + .005, XW + .02, GY + .1, GY + 2.3, -10.25, -7.65, mats.glass, g);
+  for (let z = -10.25; z <= -7.6; z += .65) box(XW, XW + .05, GY + .05, GY + 2.35, z - .03, z + .03, wood, g);
+  box(2.3, 3.8, GY + .1, GY + 2.3, -7.42, -7.385, mats.glass, g);
+  for (const x of [2.3, 3.05, 3.8]) box(x - .03, x + .03, GY + .05, GY + 2.35, -7.43, -7.37, wood, g);
+  // ...and the open shelter under it, at pool level, kept and made a loggia: sandstone floor, a stone hearth bench along
+  // the garage wall, an ochre band at its edge carrying the line of the trays
+  box(2.06, 3.79, 7.95, 7.97, -10.49, -7.41, flag, g);
+  box(2.06, 2.5, 7.95, 8.4, -10.3, -7.6, stone, g);
+  box(2.0, XW + .05, GY - .55, GY - .3, -10.55, -10.48, ochre, g); box(2.0, XW + .05, GY - .55, GY - .3, -7.42, -7.35, ochre, g);
+  box(XW, XW + .07, GY - .55, GY - .3, -10.5, -7.4, ochre, g);
+
+  // one ochre concrete tray over the garage roof line: the studio floor, out north as a 0.9 m balcony over the pool path,
+  // and on south as the solid roof of the car space
+  D.poly([[-1.2, -18.6], [2.2, -18.6], [2.2, -13.1], [XW, -13.1], [XW, -6.5], [-1.05, -6.5], [-1.05, -7.4], [-1.2, -7.4]], FL, .3, ochre, g);
+  D.wall([[XW, -7.0], [XW, -6.5], [-1.05, -6.5], [-1.05, -7.4]], FL, .9, .2, ochre, g);   // balcony parapet
+  box(-1.2, 2.2, FL - .35, FL, -18.6, -18.42, ochre, g);                     // deep fascia to the car roof
+  box(2.05, XW, FL - .3, FL, -13.1, -10.5, ochre, g);                         // tray closes over the stair head
+  // car space: laid sandstone wall on the boundary, sandstone pier on the garden side, concrete deck floor
+  box(-1.2, -0.9, GY, FL - .3, -18.2, -13.1, stone, g);
+  for (let y = GY + .7; y < FL - .4; y += 1.15) box(-0.92, -0.88, y, y + .07, -18.2, -13.1, band, g);
+  box(1.9, 2.6, GY - .6, FL - .3, -17.95, -17.25, stone, g);
+  box(-0.95, 1.85, GY + .01, GY + .07, -24.0, -13.1, desMat.pale, g);       // concrete car deck: one car covered, a second in tandem
+  for (const x of [-0.95, 1.79]) box(x, x + .06, GY, GY + .15, -24.0, -18.6, desMat.pale, g);   // kerbs
+  box(1.85, 2.1, GY - .3, GY + .45, -16.9, -14.4, stone, g);                // low stone wall between car and the pool stair head
+
+  // studio room upstairs (X -1.05..4.05, Z -13.1..-7.4): brick south and east like the garage, glass north and west
+  box(-1.05, -0.8, FL, EV, -13.1, -7.4, garageBrick, g);                     // east wall, neighbour side
+  box(-1.05, XW, FL, FL + 1.75, -13.1, -12.85, garageBrick, g);              // south wall
+  box(-0.8, XW, FL + 1.75, EV - .05, -13.0, -12.97, mats.glass, g);          // clerestory band over it
+  for (let x = -0.8; x <= XW; x += .55) box(x - .03, x + .03, FL + 1.75, EV, -13.02, -12.95, wood, g);
+  D.glass([[-0.8, -7.45], [XW - .05, -7.45], [XW - .05, -12.85]], FL, EV - FL, g);   // glass meets glass at the north-west corner, no post
+  for (let x = -0.8; x < XW - .2; x += 1.1) box(x - .035, x + .035, FL, EV, -7.5, -7.4, wood, g);
+  for (let z = -12.85; z < -7.6; z += 1.1) box(XW - .1, XW, FL, EV, z - .035, z + .035, wood, g);
+  D.battens([[XW + .15, -12.8], [XW + .15, -9.6]], FL + .05, EV - .05, .3, .05, .16, wood, g);   // timber fins on the south half of the west glass
+  box(-0.8, XW - .1, FL, FL + .02, -12.85, -7.5, flag, g);                   // floor
+  box(-0.5, 0.6, FL, FL + .9, -12.6, -11.6, dark, g);                        // a built-in seat and desk inside, for scale
+  // the stone core again: a sandstone pier at the south-west corner, standing in the garden, rising through the eave as a chimney
+  box(XW, XW + .8, 9.2, EV + 1.2, -13.9, -12.6, stone, g);
+  box(XW - .1, XW + .9, EV + 1.2, EV + 1.35, -14.0, -12.5, stone, g);
+  for (let y = 9.9; y < EV + 1.1; y += 1.15) box(XW - .02, XW + .82, y, y + .07, -13.92, -12.58, band, g);
+  // the same broad terracotta hip as the house, 1.0 m eave over the north glass
+  broadRoof(-1.2, XW + 1.0, -14.1, -6.4, EV, .55);
 
   // ---- behind: the study keeps its walls but gets the same thin ochre lid, overhanging like the main roof ----
   D.poly([[0.5, -3.2], [7.0, -3.2], [7.0, -1.0], [0.5, -1.0]], 8.45, .15, ochre, g);
@@ -2209,8 +2409,13 @@ design('seidler', 'Harry Seidler', {
     [-1, 10.5, -6, -0.07, 11.5, 11.8],           // timber deck posts
     [10.6, 12.1, 2.3, 3.1, 6.1, 6.5],            // west arch infill: the arch becomes a square opening
     [-1.15, -0.2, 2.2, 2.7, 6.1, 6.5],           // east arch infill: same
+    [-1.25, 4.25, GAR_Y + 2.45, GAR_Y + 2.7, -13.3, -7.2],    // garage: metal roof (a concrete slab replaces it)
+    [-0.8, 1.8, GAR_Y - .05, GAR_Y + 2.15, -13.2, -13.05],    // garage: roller door (becomes the apartment's front door)
+    [-1.25, 2.05, GAR_Y + 2.4, GAR_Y + 2.6, -20.55, -13.2],   // carport roof
+    [-1.12, -0.98, GAR_Y - .05, GAR_Y + 2.5, -20.37, -20.23], [1.78, 1.92, GAR_Y - .05, GAR_Y + 2.5, -20.37, -20.23],   // carport posts
+    [-1.12, -0.98, GAR_Y - .05, GAR_Y + 2.5, -16.87, -16.73], [1.78, 1.92, GAR_Y - .05, GAR_Y + 2.5, -16.87, -16.73],
   ],
-  note: 'Seidler would find one geometric fact in this house and build everything from it: the glass projection sticks out 2.85 m, and the empty bay east of it is 2.84 m wide. So a quarter-circle centred on the corner where the projection meets the brick fills that bay exactly, and every curve in the scheme is drawn from that one centre: the new two-storey glass corner room, the sunshades that wrap it, and the terrace edge. The brick is bagged and painted white, the tile roof is replaced by a thin curved roof, and the two arches are squared off. Kept: the whole brick frame, the projection, the windows, the study and the entry. Removed: the tile roof, the old deck and rails, the shade sail, one small studio window (it now opens into the corner room). Sun: every sunshade is sized for this latitude. The roof sails out 1.0 m over the bedroom windows and curves up to the north, so midwinter sun (32.6 degrees) reaches the full height of the windows and a clerestory strip under the roof, while midsummer sun (79.5 degrees) is kept off all of them. The slabs over the living and studio glass project 0.9 m, which shades the glass completely at midsummer noon and lets midwinter sun onto all of the living glass and all but the top few centimetres of the studio glass. The west glass gets vertical aluminium fins against the afternoon sun. The terrace is a concrete slab on a sandstone base wall, with its curved east end cantilevering out unsupported.',
+  note: 'Seidler would find one geometric fact in this house and build everything from it: the glass projection sticks out 2.85 m, and the empty bay east of it is 2.84 m wide. So a quarter-circle centred on the corner where the projection meets the brick fills that bay exactly, and every curve in the scheme is drawn from that one centre: the new two-storey glass corner room, the sunshades that wrap it, and the terrace edge. The brick is bagged and painted white, the tile roof is replaced by a thin curved roof, and the two arches are squared off. Kept: the whole brick frame, the projection, the windows, the study and the entry. Removed: the tile roof, the old deck and rails, the shade sail, one small studio window (it now opens into the corner room). Sun: every sunshade is sized for this latitude. The roof sails out 1.0 m over the bedroom windows and curves up to the north, so midwinter sun (32.6 degrees) reaches the full height of the windows and a clerestory strip under the roof, while midsummer sun (79.5 degrees) is kept off all of them. The slabs over the living and studio glass project 0.9 m, which shades the glass completely at midsummer noon and lets midwinter sun onto all of the living glass and all but the top few centimetres of the studio glass. The west glass gets vertical aluminium fins against the afternoon sun. The terrace is a concrete slab on a sandstone base wall, with its curved east end cantilevering out unsupported. BACK OF THE SITE: the garage becomes a standalone apartment of about 57 m2 inside, just under the 60 m2 granny-flat limit. Downstairs, in the old garage, are the front door (where the roller door was, off the driveway), a shower room, a kitchenette and the stair, plus the brick room over the pool end. Upstairs is one 38 m2 living and sleeping room in a white box on an off-form concrete slab. Its north-west corner is the same 2.85 m quarter-circle as the house, in full-height glass looking north over the pool and over the house roof to the view; to wrap the old garage corner it cantilevers 0.85 m past it, partly over the pool edge. Kept: all the garage brick walls and piers (bagged white), and the sheltered pool-level loggia under the west room, left open to the pool with a sandstone bench. Removed: the garage tin roof and roller door, the carport roof and posts. The carport becomes a concrete car deck for two cars in tandem, roofed by the same slab running on south (a deck for the apartment on top), carried on an off-form concrete wall along the east boundary and two round concrete columns, with its street end rounded on the same radius. Sun: a 1.0 m roof slab over the north glass (full winter sun, no summer sun) and aluminium fins on the west glass. The building sits at the south-east corner of the pool, so at midday it shades only the strip of water under its cantilever, about a metre wide. Honest cost: this is a small new house, not a conversion. A concrete storey on old garage walls and piers needs an engineer (expect new concrete walls inside the brick), plus the concrete deck, wall and columns, curved glass, and services run to the back of the site.',
 }, g => {
   const CX = PX, CZ = BD, R = PF - BD;               // the one centre and the one radius (2.85 m)
   const A0 = Math.PI, A1 = Math.PI / 2;              // quadrant from the brick wall (east) round to the projection front (north)
@@ -2276,6 +2481,46 @@ design('seidler', 'Harry Seidler', {
   const rail = [[-1.35, 5.95]].concat(arc(RT - .06, aE, A1, 18), [[BW, 11.69]]);
   D.battens(rail, 0, .95, .13, .02, .02, W, g);
   D.wall(rail, .95, .05, .06, W, g);
+
+  // ================= BACK OF THE SITE: garage apartment over the pool loggia + concrete car deck =================
+  const GY = GAR_Y, GT = GY + 2.5, FL = GY + 2.85, CL = FL + 2.65;   // garage floor, garage top, apartment floor, roof soffit
+  const C = desMat.conc, XW = 4.9, ZN = -6.55, CQ = [XW - R, ZN - R];  // same 2.85 m radius; the curve wraps the garage's north-west corner
+  const qa = (r, a0, a1, n = 20) => D.arc(CQ[0], CQ[1], r, a0, a1, n);
+  // the garage kept: every brick wall and both piers, bagged white (a skin round each old box)
+  for (const b of [[-1.05, 2.05, GY, GT, -13.1, -7.4], [2.05, 4.05, GY - .3, GT, -10.5, -7.4], [3.8, 4.05, 7.95, GY - .3, -10.5, -10.25], [3.8, 4.05, 7.95, GY - .3, -7.65, -7.4], [1.95, 2.05, 7.95, GY, -14.4, -7.4]])
+    box(b[0] - .02, b[1] + .02, b[2], b[3], b[4] - .02, b[5] + .02, W, g);
+  // garage-level room: the west room over the loggia gets a window to the pool and one to the north
+  box(4.07, 4.1, GY + .5, GT - .3, -10.2, -7.7, mats.glass, g); box(2.3, 3.75, GY + .5, GT - .3, -7.38, -7.35, mats.glass, g);
+  box(-.6, 1.6, GY + .6, GT - .3, -7.38, -7.35, mats.glass, g);
+  // the pool loggia under it is kept as it is: open to the pool, now with a white soffit and a sandstone bench along the stair wall
+  box(2.07, 3.8, GY - .32, GY - .3, -10.5, -7.4, W, g);
+  box(2.08, 2.5, 7.95, 8.4, -10.3, -7.6, desMat.sandstone, g);
+  // front door where the roller door was, under the car roof: glass door + white panel
+  box(-.75, 1.75, GY, GY + 2.1, -13.16, -13.12, W, g);
+  box(.85, 1.65, GY + .02, GY + 2.0, -13.19, -13.15, mats.glass, g);
+  for (const [a, b] of [[.8, .85], [1.65, 1.7]]) box(a, b, GY, GY + 2.0, -13.2, -13.14, frame, g); box(.8, 1.7, GY + 2.0, GY + 2.05, -13.2, -13.14, frame, g);
+  // concrete car deck for two cars in tandem
+  box(-1.05, 1.85, GY - .05, GY + .06, -23.6, -13.12, desMat.pale, g);   // stays inside the 2.8 m access strip
+  box(-1.3, -1.05, GY, GT, -23.6, -13.12, C, g);                 // off-form concrete blade wall along the east boundary
+  for (const z of [-17.0, -21.0]) rod(V(2.15, ground(2.15, z), z), V(2.15, GT, z), .16, C, g, 16);   // round concrete columns
+  // one off-form slab: apartment floor to the north, car roof to the south, rounded at both ends on the same radius
+  const SQ = [2.4 - R, -23.6 + R], ZS = -14.1;
+  const slabOut = [[-1.3, -23.6]].concat(D.arc(SQ[0], SQ[1], R, -Math.PI / 2, 0, 16), [[2.4, ZS], [XW, ZS], [XW, CQ[1]]], qa(R, 0, Math.PI / 2), [[-1.3, ZN]]);
+  D.poly(slabOut, FL, .35, C, g);
+  // the apartment: white walls east and south, glass round the north-west curve and the north end of the west side, fins on the west
+  const AW = .2, ZG = -12.4;
+  D.wall([[-1.05, ZN - .02], [-1.05, ZS], [XW, ZS], [XW, ZG]], FL, CL - FL, AW, W, g);
+  D.glass([[XW - .02, ZG], [XW - .02, CQ[1]]].concat(qa(R - .02, 0, Math.PI / 2), [[-1.05, ZN - .02]]), FL, CL - FL, g);
+  for (const [x, z] of [[XW, ZG], [XW, CQ[1]]].concat(qa(R, 0, Math.PI / 2, 4), [[-1.05, ZN]])) box(x - .03, x + .03, FL, CL, z - .03, z + .03, frame, g);
+  for (let z = ZG + .2; z < CQ[1] - .1; z += .38) box(XW + .06, XW + .4, FL + .05, CL - .05, z, z + .05, desMat.alu, g);   // west fins
+  // roof slab: 1.0 m eave round the north curve, just covering the fins on the west
+  const XR = XW + .45, aS = Math.acos((XR - CQ[0]) / (R + 1.0));
+  const roofOut = [[-1.15, ZS - .1], [XR, ZS - .1]].concat(qa(R + 1.0, aS, Math.PI / 2), [[-1.15, CQ[1] + R + 1.0]]);
+  D.poly(roofOut, CL + .3, .3, W, g);
+  D.wall(roofOut.concat([roofOut[0]]), CL + .3, .25, .08, W, g);   // parapet lip
+  // the apartment's own deck on the car roof, south of the box, behind a white steel rail
+  const deckRail = [[2.34, ZS - .05]].concat(D.arc(SQ[0], SQ[1], R - .06, 0, -Math.PI / 2, 16), [[-1.24, -23.54], [-1.24, ZS - .05]]);
+  D.battens(deckRail, FL, FL + 1.0, .13, .02, .02, W, g); D.wall(deckRail, FL + 1.0, .05, .06, W, g);
 });
 
 // ---- vision: murcutt ----
@@ -2289,8 +2534,13 @@ design('murcutt', 'Glenn Murcutt', {
     [-0.55, 2.6, 1.88, 2.8, 6.45, 11.75],    // the shade sail
     [-0.6, -0.4, -0.1, 2.05, 11.05, 11.25],  // its post
     [-0.4, 10.85, 8.25, 8.55, -0.4, 6.85],   // the timber fascia ring of the old hip roof
+    [-1.25, 4.25, GAR_Y + 2.45, GAR_Y + 2.7, -13.3, -7.2],    // garage: flat metal roof
+    [-0.8, 1.8, GAR_Y - .05, GAR_Y + 2.15, -13.2, -13.05],     // garage: roller door
+    [-1.25, 2.05, GAR_Y + 2.4, GAR_Y + 2.6, -20.55, -13.2],    // carport roof
+    [-1.15, -0.95, GAR_Y - .05, GAR_Y + 2.5, -20.4, -20.2], [1.75, 1.95, GAR_Y - .05, GAR_Y + 2.5, -20.4, -20.2],
+    [-1.15, -0.95, GAR_Y - .05, GAR_Y + 2.5, -16.9, -16.7], [1.75, 1.95, GAR_Y - .05, GAR_Y + 2.5, -16.9, -16.7],   // carport posts
   ],
-  note: 'The brick house stays: three storeys of heavy face brick are thermal mass, cool in summer and holding winter warmth, and every wall, window, floor and the glass projection are kept. Three things go: the dark shade sail, the terracotta tiles and their timber fascia. In their place one curved corrugated-iron roof is lifted over the brick on slim steel posts, low at the back and rising to the north. Under its high north edge a strip of glass about 0.9 m tall runs the full width above the bedroom windows, so winter sun reaches deep into the upper floor and hot air can be let out at the top. The roof oversails the north wall by 0.9 m, which shades the bedroom windows at midsummer (79.5°) and lets the midwinter sun (32.6°) onto the whole window and most of the clerestory. Gutters on both edges are sized to collect the rain. On the old deck a thin galvanised steel frame stands 0.95 m in front of the glass projection. It carries two bands of fixed aluminium blades, at the main-floor line and the roof line, so the living glass is fully shaded in summer and fully sunlit at midwinter noon. The same 0.95 m blades run off the brick at the east end. Vertical hardwood battens cover the projection\'s west glass and the sunroom\'s west window strip, against the low afternoon sun. On the garden above the pool, behind the sandstone rock face (left as it is), stands a separate one-room pavilion, 6.1 m by 2.8 m, raised on thin steel stumps and entered off the existing carport stair. Its floor is level with the high edge of the new house roof, so it looks across the pool and over the new roof to the north. The same curved roof rises to the north over a fully glazed north wall with a 1 m eave and a sliding hardwood batten screen. The south wall is corrugated iron with a high strip of glass for cross-ventilation. The west end is an open verandah behind battens. Its rain runs to a corrugated tank behind it.',
+  note: 'The brick house stays: three storeys of heavy face brick are thermal mass, cool in summer and holding winter warmth, and every wall, window, floor and the glass projection are kept. Three things go: the dark shade sail, the terracotta tiles and their timber fascia. In their place one curved corrugated-iron roof is lifted over the brick on slim steel posts, low at the back and rising to the north. Under its high north edge a strip of glass about 0.9 m tall runs the full width above the bedroom windows, so winter sun reaches deep into the upper floor and hot air can be let out at the top. The roof oversails the north wall by 0.9 m, which shades the bedroom windows at midsummer (79.5°) and lets the midwinter sun (32.6°) onto the whole window and most of the clerestory. Gutters on both edges are sized to collect the rain. On the old deck a thin galvanised steel frame stands 0.95 m in front of the glass projection. It carries two bands of fixed aluminium blades, at the main-floor line and the roof line, so the living glass is fully shaded in summer and fully sunlit at midwinter noon. The same 0.95 m blades run off the brick at the east end. Vertical hardwood battens cover the projection\'s west glass and the sunroom\'s west window strip, against the low afternoon sun. At the back there is one building, not two. The brick garage and its brick wing over the pool end are kept as a heavy base, and become a self-contained studio apartment of about 45 m² internal, under the 60 m² granny-flat limit. At garage level are the entry, a kitchen, a bathroom and the stair. The roller door is replaced by glass and a hardwood door facing the driveway, so the apartment works on its own. On a steel floor laid over the brick is one light living and sleeping room, 5.1 m by 5.7 m, under the same curved corrugated roof as the house. Where it oversails the pool stair it stands on one steel post. It is glazed full height to the north, under a 1.2 m eave with a 1 m deck, and looks over the pool and the house roof to the view. The west side to the pool is glass behind sliding hardwood battens against the afternoon sun. The east side, to the apartment block, is solid corrugated iron. The south end has a high strip of glass for cross-ventilation. The sheltered pool-level space under the brick wing is kept as the pool loggia, with a hardwood bench and a sliding batten screen on its north side. The stair down the garage\'s west wall is kept. The apartment stands at the south-east corner of the pool, so at midday its shadow falls on the driveway, not the water. It shades the east end of the pool only early in the morning. Roof water goes to a corrugated tank in the garden beside the stair. The thin carport roof and its four posts are removed. In their place is a car room of off-form concrete: a new slab, a full-height wall along the east boundary, a blade wall on the west, and a concrete roof slab that also shelters the studio door. It takes one car under cover and a second in tandem on the concrete apron, both reached straight off the back street along the access strip. The gate from the car space to the pool stair is kept. Cost, honestly: re-roofing and the clerestory are the big item on the house. The studio needs an engineer to confirm that the old garage walls and footings can carry a second storey, and may need new footings or steel posts. It also needs fire separation on the boundary side and approval as a secondary dwelling. Plumbing a bathroom and kitchenette into a garage is a real cost. The concrete car room is straightforward but heavy, and adds a retaining-wall and slab job on the boundary.',
 }, g => {
   const steel = desMat.steel, blade = desMat.alu, tim = desMat.timber;
   const corr = desMat.corr.clone(); corr.map = desMat.corr.map.clone(); corr.map.wrapS = corr.map.wrapT = THREE.RepeatWrapping; corr.map.repeat.set(5, 1); corr.map.needsUpdate = true;
@@ -2332,42 +2582,56 @@ design('murcutt', 'Glenn Murcutt', {
   box(BW, SW, 8.3, hY(.7), .57, .63, corr, g);
   box(0, BW, 8.5, hY(0) + .02, -.06, 0, corr, g);
 
-  // ---------- PAVILION on the high garden south of the pool ----------
-  // set behind the sandstone rock face that edges the pool (the rock is left untouched), clear of the tree, entered off the carport stair
-  const X1 = 3.3, X2 = 9.4, XV = 7.9, ZS = -16.2, ZG = -13.8, ZN = -13.4, FY = 9.55;
-  const za = ZS - .3, zb = ZG + 1.0, YS = FY + 2.3;
-  const roofY = z => YS + .7 * Math.pow(Math.max(0, (z - za) / (zb - za)), 1.6);
-  // floor: hardwood deck on a steel frame, lifted off the ground on thin stumps
-  box(X1, X2, FY - .08, FY, ZS, ZN, tim, g);
-  box(X1 + .1, X2 - .1, FY - .26, FY - .08, ZS + .1, ZN - .1, steel, g);
-  for (const x of [X1 + .4, 5.4, 7.4, X2 - .4]) for (const z of [ZS + .3, ZN - .3]) rod(V(x, 8.5, z), V(x, FY - .26, z), .05, steel, g);
-  box(X1 - .9, X1, FY - .3, FY - .22, -15.3, -14.4, tim, g);   // step across from the stair landing
-  // columns
-  for (const x of [X1 + .05, 5.3, XV, X2 - .05]) {
-    rod(V(x, FY, ZG + .1), V(x, roofY(ZG + .1) - .05, ZG + .1), .045, steel, g);
-    rod(V(x, FY, ZS + .05), V(x, roofY(ZS + .05) - .05, ZS + .05), .045, steel, g);
-  }
-  // curved corrugated roof, rising to the north, 1 m past the glass
-  for (let i = 0; i < 10; i++) { const z1 = za + (zb - za) * i / 10, z2 = za + (zb - za) * (i + 1) / 10; D.roofPlane(X1 - .3, X2 + .3, z1, z2, roofY(z1), roofY(z2), .05, corr, g); }
-  box(X1 - .3, X2 + .3, roofY(zb) - .16, roofY(zb) + .02, zb - .02, zb + .14, steel, g);   // north gutter
-  box(X1 - .3, X2 + .3, roofY(za) - .16, roofY(za) + .02, za - .14, za + .02, steel, g);   // south gutter
-  // north wall: glass full height, slim steel mullions
-  D.glass([[X1 + .05, ZG], [XV, ZG]], FY, roofY(ZG) - FY - .08, g);
-  for (let i = 0; i <= 4; i++) { const x = X1 + .05 + (XV - X1 - .05) * i / 4; box(x - .025, x + .025, FY, roofY(ZG) - .06, ZG - .03, ZG + .03, steel, g); }
-  // sliding hardwood batten screen on a track outside the glass, parked at the east end
-  box(X1, X2, roofY(ZG + .2) - .12, roofY(ZG + .2) - .06, ZG + .15, ZG + .25, steel, g);
-  D.battens([[X1 + .1, ZG + .2], [X1 + 2.0, ZG + .2]], FY + .02, roofY(ZG + .2) - .12, .11, .07, .035, tim, g);
-  // south wall: corrugated iron to door-head height, a strip of glass above for cross-ventilation
-  box(X1, X2, FY, FY + 1.75, ZS - .02, ZS + .04, corr, g);
-  D.glass([[X1, ZS + .01], [X2, ZS + .01]], FY + 1.75, roofY(ZS) - FY - 1.8, g);
-  // east end solid; glass wall to the open west verandah; battens on the west edge
-  box(X1, X1 + .06, FY, roofY(ZS) - .02, ZS, ZG, corr, g);
-  D.glass([[XV, ZS], [XV, ZG]], FY, roofY(ZS) - FY - .05, g);
-  D.battens([[X2 - .05, ZS + .05], [X2 - .05, ZN]], FY, YS - .1, .14, .12, .045, tim, g);
-  box(X2 - .1, X2, YS - .1, YS, ZS, ZN, steel, g);
-  // rainwater tank behind the east end
-  rod(V(4.4, roofY(za) - .1, za - .08), V(4.4, 10.95, za - .08), .05, steel, g);
-  rod(V(4.4, 9.0, -17.3), V(4.4, 10.95, -17.3), .6, corr, g);
+  // ---------- BACK OF THE SITE: the garage becomes a studio apartment, the carport a concrete car room ----------
+  // The garage's brick walls (and its brick wing over the pool end) are kept as a heavy base: entry, bathroom, kitchen, stair.
+  // On top sits one light room under the same curved roof as the house, glazed to the north over the pool and the house roof.
+  const GX1 = -1.05, GX2 = 4.05, GZS = -13.1, GZN = -7.4, GT = GAR_Y + 2.5, UF = GT + .3;
+  const sY = z => UF + 2.45 + .75 * Math.pow(Math.max(0, (z - (GZS - .35)) / ((GZN + 1.2) - (GZS - .35))), 1.6);
+  box(GX1 - .1, GX2 + .1, GT, UF, GZS - .1, GZN + .05, steel, g);                // steel-framed floor laid on the brick
+  rod(V(GX2 - .05, 8.7, GZS + .05), V(GX2 - .05, GT, GZS + .05), .06, steel, g);   // one post where the room oversails the pool stair
+  box(GX1, GX2, UF - .04, UF, GZN, GZN + 1.0, tim, g);                          // north deck, 1 m
+  box(GX1, GX2, UF - .22, UF - .04, GZN, GZN + 1.0, steel, g);
+  D.wall([[GX1, GZN + 1.0], [GX2, GZN + 1.0], [GX2, GZN]], UF, 1.0, .02, desMat.glassRail, g);
+  rod(V(GX1, UF + 1.0, GZN + 1.0), V(GX2, UF + 1.0, GZN + 1.0), .025, steel, g);
+  // roof: rising north, 1.2 m past the north glass (over the deck)
+  const za = GZS - .35, zb = GZN + 1.2;
+  for (let i = 0; i < 8; i++) { const z1 = za + (zb - za) * i / 8, z2 = za + (zb - za) * (i + 1) / 8; D.roofPlane(GX1 - .35, GX2 + .45, z1, z2, sY(z1), sY(z2), .05, corr, g); }
+  box(GX1 - .35, GX2 + .45, sY(zb) - .16, sY(zb) + .02, zb - .02, zb + .14, steel, g);
+  box(GX1 - .35, GX2 + .45, sY(za) - .16, sY(za) + .02, za - .14, za + .02, steel, g);
+  for (const [x, z] of [[GX1 + .05, GZN + .95], [GX2 - .05, GZN + .95], [GX1 + .05, GZS + .05], [GX2 - .05, GZS + .05], [1.5, GZN + .95]]) rod(V(x, UF, z), V(x, sY(z) - .05, z), .045, steel, g);
+  // north side: full glass under the eave
+  D.glass([[GX1, GZN], [GX2, GZN]], UF, sY(GZN) - UF - .1, g);
+  for (let i = 0; i <= 4; i++) { const x = GX1 + .05 + (GX2 - GX1 - .1) * i / 4; box(x - .025, x + .025, UF, sY(GZN) - .05, GZN - .03, GZN + .03, steel, g); }
+  // west side, to the pool: glass behind hardwood battens (afternoon sun), part of the screen slid open
+  D.glass([[GX2, GZN], [GX2, GZS]], UF, sY(GZS) - UF - .1, g);
+  box(GX2 + .12, GX2 + .2, sY(GZS) - .2, sY(GZS) - .14, GZS, GZN, steel, g);
+  D.battens([[GX2 + .16, GZS + .1], [GX2 + .16, -9.6]], UF, sY(GZS) - .2, .12, .035, .07, tim, g);
+  // east side to the apartment block: solid corrugated iron; south end: corrugated with a high glass strip
+  for (let k = 0; k < 8; k++) { const z1 = GZS + k * (GZN - GZS) / 8, z2 = GZS + (k + 1) * (GZN - GZS) / 8; box(GX1 - .06, GX1, UF, sY((z1 + z2) / 2), z1, z2, corr, g); }
+  box(GX1, GX2, UF, UF + 1.9, GZS - .06, GZS, corr, g);
+  D.glass([[GX1, GZS - .03], [GX2, GZS - .03]], UF + 1.9, sY(GZS) - UF - 1.95, g);
+  // ground floor entry in the old roller-door opening: glass and a hardwood door, facing the driveway
+  D.glass([[-0.75, GZS - .02], [1.75, GZS - .02]], GAR_Y, 2.1, g);
+  box(-0.75, 1.75, GAR_Y + 2.1, GAR_Y + 2.15, GZS - .06, GZS, steel, g);
+  box(0.65, 1.6, GAR_Y, GAR_Y + 2.05, GZS - .07, GZS - .03, tim, g);
+  for (const x of [-0.75, 0.6, 1.75]) box(x - .03, x + .03, GAR_Y, GAR_Y + 2.1, GZS - .07, GZS + .02, steel, g);
+  // the sheltered pool room under the brick wing is kept, made a loggia: hardwood bench, sliding batten screen to the north
+  box(2.15, 2.6, 7.95, 8.4, -10.3, -7.6, tim, g);
+  box(2.1, 3.8, 10.0, 10.05, -7.33, -7.27, steel, g);
+  D.battens([[2.15, -7.3], [3.0, -7.3]], 7.97, 10.0, .11, .07, .035, tim, g);
+  // rainwater tank in the garden beside the pool stair
+  rod(V(4.4, sY(za) - .1, za - .1), V(4.4, 11.3, za - .1), .05, steel, g);
+  rod(V(4.5, 8.7, -14.15), V(4.5, 11.3, -14.15), .6, corr, g);
+
+  // car room: off-form concrete floor, boundary wall, blade wall and roof slab; one car under cover and one on the apron
+  const conc = desMat.conc, CY = GAR_Y;
+  box(HANDLE.x1 - .3, HANDLE.x2, CY - .14, CY + .06, -23.6, GZS, conc, g);       // new concrete slab
+  box(-1.35, -1.1, CY, CY + 2.45, -19.2, GZS, conc, g);                            // boundary wall (east)
+  box(1.55, 1.8, CY, CY + 2.45, -19.2, -17.0, conc, g);                            // blade wall (west)
+  box(-1.35, 1.95, CY + 2.2, CY + 2.45, -19.2, GZS - .02, conc, g);                // roof slab, also over the studio door
+  box(-1.35, -1.1, CY, CY + .9, -23.6, -19.2, conc, g);                            // low wall along the apron
+  box(1.6, 1.8, CY + .06, CY + .16, -23.6, -19.2, conc, g);                        // apron kerb
+  D.wall([[1.85, -15.2], [1.85, -17.0]], CY, 1.0, .02, desMat.glassRail, g);       // pool-fence side, with the gate to the pool stair kept
 });
 
 // ---- vision: kuma ----
@@ -2384,8 +2648,12 @@ design('kuma', 'Kengo Kuma', {
     [-0.6, -0.4, -0.1, 2.1, 11.5, 11.85],   // shade-sail pole
     [PX - .01, BW + .01, 5.94, 6.21, PF - .16, PF + .01],   // white parapet on the projection roof (the new eave takes its place)
     [10.3, 11.7, -3.2, 1.0, 11.1, 15.05],   // concrete flight up the west side of the deck and its tube rails (replaced by the cedar steps)
+    [-1.25, 4.25, 12.85, 13.1, -13.3, -7.2],   // garage: metal roof (the studio's upper floor replaces it)
+    [-0.8, 1.8, 10.35, 12.55, -13.2, -13.05],  // garage: roller door (the opening becomes the studio's front door)
+    [-1.25, 2.05, 12.8, 13.0, -20.6, -13.2],   // carport: steel roof
+    [-1.15, 1.95, 10.35, 12.9, -20.4, -16.7],  // carport: four posts
   ],
-  note: 'Kuma would not hide this brick house behind a new object. He would leave the brick and the tile roof alone and make the edges porous with small pieces of cedar, so the house thins out into the trees and the slope. Kept: the whole brick body, the hip roof, the glass projection, the entry tower and the deck frame. Removed: the tube railings, the shade sail, the white parapet, and the concrete flight of steps up the west side of the deck. Added: (1) thin layered eaves, cedar sticks corbelled out in steps under a thin zinc plate, 1.0 m deep over the living glass, 0.9 m over the studio glass and 0.85 m over the bedroom windows. Midwinter noon sun (32.6 degrees) reaches the full height of every north window; midsummer sun (79.5 degrees) stays off the glass. (2) In the empty east corner, a two-storey open-air cedar lattice room that completes the projection as a frame of sticks. Its east face is open at deck level and close-spaced above, against the apartment block and the morning glare. Its north face is just posts and a fine top valance, so the kitchen and studio-bedroom windows still get the winter sun. A deciduous native white cedar grows up through its lattice roof: shade in summer, bare in winter. (3) Angled cedar fins on the west glass and the sunroom window strip, turned to cut the low west sun and leave the north-west view open. (4) The deck re-boarded with fine cedar balusters, and broad cedar steps down to the street path that climb around the trunk of the big gum, in place of the concrete flight. (5) A sedum roof on the projection, seen from the bedrooms. (6) At the back, a stick pergola over the stone terrace, its roof level with the pool edge. The fibro on the sunroom and study is re-clad in cedar boards.',
+  note: 'Kuma would not hide this brick house behind a new object. He would leave the brick and the tile roof alone and make the edges porous with small pieces of cedar, so the house thins out into the trees and the slope. Kept: the whole brick body, the hip roof, the glass projection, the entry tower and the deck frame. Removed: the tube railings, the shade sail, the white parapet, and the concrete flight of steps up the west side of the deck. Added: (1) thin layered eaves, cedar sticks corbelled out in steps under a thin zinc plate, 1.0 m deep over the living glass, 0.9 m over the studio glass and 0.85 m over the bedroom windows. Midwinter noon sun (32.6 degrees) reaches the full height of every north window; midsummer sun (79.5 degrees) stays off the glass. (2) In the empty east corner, a two-storey open-air cedar lattice room that completes the projection as a frame of sticks. Its east face is open at deck level and close-spaced above, against the apartment block and the morning glare. Its north face is just posts and a fine top valance, so the kitchen and studio-bedroom windows still get the winter sun. A deciduous native white cedar grows up through its lattice roof: shade in summer, bare in winter. (3) Angled cedar fins on the west glass and the sunroom window strip, turned to cut the low west sun and leave the north-west view open. (4) The deck re-boarded with fine cedar balusters, and broad cedar steps down to the street path that climb around the trunk of the big gum, in place of the concrete flight. (5) A sedum roof on the projection, seen from the bedrooms. (6) At the back, a stick pergola over the stone terrace, its roof level with the pool edge. The fibro on the sunroom and study is re-clad in cedar boards. Back of the site: the brick garage and its west room over the pool are kept as the ground floor of a separate one-bedroom studio apartment of about 45 m2 inside. Downstairs (about 18 m2): the entry, shower room, kitchenette and stair in the old garage, and a sitting room in the west room with a new window over the pool. Upstairs (about 27 m2): a new cedar-and-glass room on a thin concrete slab over the whole garage, cantilevered 1.2 m north. It is fully glazed north towards the house roof and the view, under the same 1.0 m layered eave as the house, with angled cedar fins on the west glass over the pool, close cedar strips on the east face against the apartment block, and a sedum roof. Its south-west corner roofs the top of the pool stair on one slim post. The front door is in the old roller-door opening, off the driveway, behind a cedar screen, so it works on its own. The sheltered space under the west room, beside the pool, is kept and made into an engawa: cedar boards over the paving, a cedar-stick ceiling, a bench along the brick and a stick screen on its north side, still open to the pool. Removed: the garage metal roof, the roller door, and the carport roof and posts. The carport becomes a concrete car room for one car: a board-marked concrete wall on the east boundary, a thin slab level with the studio floor, with a cedar soffit and a planted roof, and two slim columns on the west so car doors open. A second car parks in tandem on an open concrete apron with grass joints, still reached from the back street. Sun: the studio is south of the house and at the east end of the pool, so at noon its shadow falls on the driveway, and only morning shadow crosses the pool. Cost: the old garage walls are probably single brick on shallow footings and the west room sits on two brick piers, so the upper floor needs new steel posts and footings inside the walls. Treat it as a new small building plus a concrete car structure, a substantial cost, and it needs secondary-dwelling approval.',
 }, g => {
   const cedar = M({ color: 0xb79470, roughness: .85 });
   const plate = desMat.zinc;
@@ -2475,12 +2743,62 @@ design('kuma', 'Kengo Kuma', {
   for (let x = 6.55; x < 10.6; x += .18) S(x, x + .045, RY, RY + .06, -6.0, -3.35);
   for (let z = -5.95; z < -3.3; z += .3) S(6.4, 10.75, RY + .06, RY + .12, z, z + .045);
 
+
+  // ======== back of the site: the garage becomes a two-level studio, the carport a concrete car room ========
+  // garage brick walls X -1.05..2.05, Z -13.1..-7.4, Y GAR_Y..GAR_Y+2.5; its west room X 2.05..4.05 over the pool-level shelter
+  const GY = GAR_Y, GT = GAR_Y + 2.5, conc = desMat.pale, backing = M({ color: 0x6b5d4f, roughness: .9 });
+  // ground floor (kept brick): entry, shower room, kitchenette and stair in the old garage; the west room over the shelter is the
+  // living room, with a new window west over the pool. Front door in the old roller-door opening, behind a cedar screen.
+  box(-.75, 1.75, GY, GY + 2.1, -13.12, -13.08, mats.glass, g);
+  S(-.75, 1.75, GY + 2.05, GY + 2.12, -13.2, -13.12);
+  for (let x = -.7; x < .75; x += .11) S(x, x + .045, GY, GY + 2.05, -13.2, -13.15);          // screen over the fixed half, door left clear
+  box(.1, 1.3, GY + .9, GY + 2.0, -7.39, -7.35, mats.glass, g); S(.05, 1.35, GY + .84, GY + .9, -7.4, -7.3); S(.05, 1.35, GY + 2.0, GY + 2.06, -7.4, -7.3);
+  box(4.05, 4.09, GY + .3, GY + 2.2, -10.2, -7.7, mats.glass, g);                               // living-room window over the pool
+  for (let z = -10.1; z < -7.7; z += .17) put(cedar, 4.28, GY + 1.25, z, .24, 1.9, .035, -.7);
+  // the shelter under it, beside the pool, kept and made into an engawa: cedar boards over the paving, a cedar-stick ceiling,
+  // a low bench along the brick wall, and a stick screen on its north side; it stays open to the pool on the west
+  box(2.06, 3.8, 7.95, 7.99, -10.48, -7.42, mats.deckNew, g);
+  for (let z = -10.42; z < -7.45; z += .12) S(2.06, 4.0, GY - .38, GY - .32, z, z + .045);
+  S(2.08, 2.5, 7.99, 8.42, -10.3, -7.6);
+  for (let x = 2.15; x < 3.8; x += .12) S(x, x + .045, 7.99, GY - .38, -7.47, -7.42);
+  // a new upper floor in cedar and glass on a thin concrete slab, over the whole garage and its west room, cantilevered 1.2 m north
+  // towards the house; its south-west corner also roofs the top of the pool stair, on one slim cedar post
+  const UX0 = -1.0, UX1 = 4.05, UZ0 = -13.1, UZ1 = -6.2, UY0 = GT + .3, UY1 = UY0 + 2.65;
+  box(-1.05, UX1 + .05, GT, UY0, UZ0, UZ1, conc, g);
+  S(3.85, 4.0, ground0(3.92, -13.0) - .2, GT, -13.08, -12.93);
+  box(UX0, UX0 + .12, UY0, UY1, UZ0, UZ1, backing, g);                                         // east wall: solid against the apartment block
+  box(UX0, UX1, UY0, UY1, UZ0, UZ0 + .12, backing, g);                                         // south wall: solid
+  box(.3, 1.7, UY0 + .8, UY0 + 1.9, UZ0 - .01, UZ0 + .13, mats.glass, g);                      // high south window for cross-breeze
+  for (let x = UX0 + .06; x < UX1; ) { const open = x > .3 && x < 1.7; S(x, x + .045, UY0, UY1, UZ0 - .08, UZ0 - .02); x += open ? .22 : .1; }   // cedar sticks over the south face, opening at the window
+  D.glass([[UX0 + .12, UZ1 + .05], [UX1 - .05, UZ1 + .05], [UX1 - .05, UZ0 + .12]], UY0, UY1 - UY0, g);   // north and west glass
+  for (let x = UX0 + .12; x <= UX1 + .01; x += (UX1 - UX0 - .12) / 4) S(x - .03, x + .03, UY0, UY1, UZ1 + .02, UZ1 + .08);
+  for (let y = UY0 + .45; y < UY1 - .1; y += .15) S(UX0 - .07, UX0, y - .03, y + .03, UZ0, UZ1);   // east face: close cedar strips, the house's lattice language
+  for (let z = UZ0 + .2; z < UZ1 - .1; z += .17) put(cedar, UX1 + .2, (UY0 + UY1) / 2, z, .24, UY1 - UY0, .035, -.7);   // west fins over the pool (afternoon sun)
+  S(UX1 + .05, UX1 + .38, UY1 - .04, UY1, UZ0, UZ1, plate); S(UX1 + .05, UX1 + .38, UY0, UY0 + .04, UZ0, UZ1, plate);
+  box(UX0 - .1, UX1 + .4, UY1, UY1 + .08, UZ0 - .1, UZ1, plate, g);
+  box(UX0 + .05, UX1 + .2, UY1 + .08, UY1 + .16, UZ0, UZ1 - .05, sedum, g);
+  hisashi(UX0 - .1, UX1 + .4, UZ1, UY1, 1.0, 4);                                               // the same 1.0 m layered eave as the house
+  // ---- carport -> a concrete car room: board-marked wall on the east boundary, a thin slab level with the studio floor, cedar soffit, planted roof ----
+  const CZ0 = -19.6, CZ1 = UZ0, seam = M({ color: 0xcfc8b8, roughness: .9 });
+  box(-.95, -.75, GY, GT, CZ0, CZ1, conc, g);
+  for (let y = GY + .3; y < GT; y += .3) box(-.751, -.745, y - .008, y + .008, CZ0, CZ1, seam, g);   // board-form lines
+  box(-.95, 1.95, GT, GT + .25, CZ0, CZ1, conc, g);
+  for (const z of [CZ0 + .25, -16.4]) S(1.65, 1.82, GY, GT, z - .1, z + .1);                  // two slim cedar-clad columns on the west: doors open freely
+  for (let z = CZ0 + .1; z < CZ1; z += .15) S(-.75, 1.95, GT - .08, GT, z, z + .05);          // cedar soffit
+  box(-.85, 1.85, GT + .25, GT + .33, CZ0 + .1, CZ1 - .05, sedum, g);
+  for (let i = 0; i < 9; i++) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.22 + rr() * .15, 0), sedum); m.position.set(1.6 + rr() * .2, GT + .33, CZ0 + .4 + i * .7); m.scale.y = .6; g.add(m); }   // low planting along the roof edge
+  box(HANDLE.x1, HANDLE.x2, GY, GY + .06, -24.0, CZ0, conc, g);                                // second, uncovered tandem space (the drive is level to Z -24)
+  for (let z = -23.8; z < CZ0; z += .7) box(HANDLE.x1, HANDLE.x2, GY + .06, GY + .065, z, z + .12, sedum, g);   // grass joints
+  box(HANDLE.x1, HANDLE.x2, GY, GY + .05, CZ0, CZ1, conc, g);
+
   flush();
 });
 
 // ---- vision: sun ----
 design('sun', 'Yours, refined: Sun Planes on Brick', { short: 'Yours, refined', base: 'after', afterSkin: 'brickAll', frames: 0x4a3a2c, roof: true, bal: false,
-  note: 'Your After with what three independent reviewers (structure, sun, architecture) agreed on. Brick everywhere and no charcoal bands. Thin pale sunshade planes 0.9 m deep over the north glass at both floors, carried round your curve, so the glass gets full sun at midwinter noon and is shaded at midsummer. A frameless glass balustrade instead of the picket rail. Bronze louvres on the west glass. Solar panels on the north roof face (about 3.5 kW shown; the east and west hips take it to about 6.6 kW).' }, g => {
+  remove: [[-1.25, 4.25, GAR_Y + 2.48, GAR_Y + 2.7, -13.3, -7.2], [-1.25, 2.05, GAR_Y + 2.4, GAR_Y + 2.6, -20.6, -13.2], [-.8, 1.8, GAR_Y - .05, GAR_Y + 2.15, -13.2, -13.05],
+    ...[[-1.05, -20.3], [1.85, -20.3], [-1.05, -16.8], [1.85, -16.8]].map(([x, z]) => [x - .1, x + .1, GAR_Y - .05, GAR_Y + 2.5, z - .1, z + .1])],
+  note: 'Your After with what three independent reviewers (structure, sun, architecture) agreed on. Brick everywhere and no charcoal bands. Thin pale sunshade planes 0.9 m deep over the north glass at both floors, carried round your curve, so the glass gets full sun at midwinter noon and is shaded at midsummer. A frameless glass balustrade instead of the picket rail. Bronze louvres on the west glass. Solar panels on the north roof face (about 3.5 kW shown; the east and west hips take it to about 6.6 kW). At the back, the brick garage becomes a one-bedroom apartment of about 54 m² internal, inside the 60 m² granny-flat limit. The garage and its west room over the pool end are kept as they stand, brick walls and all, and become the ground floor: entry, stair, shower room, laundry and a small sitting room over the pool. The sheltered space at pool level under that west room, with its brick piers, stays exactly as it is. Taken away: the garage\'s metal roof, the roller door (a bronze-framed glass door and sidelight go in its place) and the carport roof and its four posts. On top goes one new floor of the same face brick, about 35 m² of living, kitchen and bed, with the same language as the house: a glass north wall in slim bronze frames that turns the north-west corner on the same 1.2 m radius as your curve, a pale concrete ledge 0.9 m deep with a frameless glass rail at the floor and a pale roof plane 0.9 m deep above, so the glass gets full sun at midwinter noon and is shaded at midsummer, bronze louvres on the west window, and two solar panels. It looks north over the pool and the house roof, and being south of everything it shades nothing of the house; the pool loses only a little early-morning and late-afternoon shade at its east end. The upper floor reaches south over a covered entry and the top of the pool stair, and its 300 mm slab carries on as the roof of a built car space: a concrete deck at garage level for two cars in tandem, a face-brick wall on the east boundary and two bronze posts on the west, reached from the back street along the 2.8 m strip as now. Honest notes: the old garage walls were not built to carry a floor, so in reality a steel frame and new footings would sit inside the brick, and the 2 m overhang over the stair needs a steel beam back to the pier line. Clear width in the car space is about 2.5 m, tight for doors, and tandem parking means shuffling cars. A boundary wall and a two-storey building this close to the neighbours most likely means a DA, not the quick granny-flat approval. No cost figure is given here: price it as a small new dwelling plus a concrete car structure, and get a quote from a builder.' }, g => {
   D.poly(frontOutline(.9), 6.0, .2, desMat.pale, g);
   D.poly(frontOutline(.85), 2.98, .12, desMat.pale, g);
   D.wall(frontOutline(.82).slice(0, -1).concat([[-.82, BD]]), 6.0, 1.0, .025, desMat.glassRail, g);
@@ -2489,6 +2807,57 @@ design('sun', 'Yours, refined: Sun Planes on Brick', { short: 'Yours, refined', 
   for (const [zc, xs] of [[6.2, [1.0, 2.75, 4.5, 6.25, 8.0]], [5.15, [2.75, 4.5, 6.25]]]) for (const x of xs) {
     const p = new THREE.Mesh(new THREE.BoxGeometry(1.7, .04, 1.0), desMat.pv);
     p.position.set(x + .85, 8.5 + (eave - zc) * Math.tan(pitch) + .07, zc); p.rotation.x = pitch; p.castShadow = true; g.add(p); }
+  // ================= back of the site: the garage becomes a studio apartment, the carport a built car space =================
+  // Same family as the house: the garage's face brick kept and carried up, slim bronze frames, one 1.2 m rounded corner
+  // (north-west, facing the pool and the house), thin pale planes 0.9 m deep over the north glass, a frameless glass rail.
+  // The garage's west room over the pool end and the sheltered pool-level space under it (with its brick piers) are kept as they are.
+  const G = GAR_Y, XE = -1.05, XW = 4.05, ZN = -7.4, ZS = -15.4, R = 1.2, O = .9, FL = G + 2.8, EV = FL + 2.7, ZC = -26.6, CW = 1.95;
+  const bz = garageBrick, br = desMat.bronze;
+  const nArc = (r, a0, a1) => D.arc(XW - R, ZN - R, r, a0, a1, 12);
+  const bal = () => [[XE, ZN + O], ...nArc(R + O, Math.PI / 2, 0), [XW, ZN - R]];        // north edge and round corner, 0.9 m out
+  // floor plate: a 300 mm pale slab on the garage walls is the upper floor and its north ledge, and runs on south as the car roof
+  D.poly([...bal(), [XW, ZS], [CW, ZS], ...D.arc(CW - R, ZC + R, R, 0, -Math.PI / 2, 10), [-.66, ZC], [XE, ZS]], FL, .3, desMat.pale, g);
+  // upper floor walls: brick to the neighbour (east) and the lane (south), brick with a screened window to the west, glass to the north
+  box(XE, XE + .28, FL, EV, ZS, ZN, bz, g);
+  box(XE, XW, FL, EV, ZS, ZS + .28, bz, g);
+  box(XW - .28, XW, FL, EV, ZS, ZN - R, bz, g);
+  const pane = (pts, y1, y2) => { D.glass(pts, y1, y2 - y1, g); D.wall(pts, y1 - .02, .06, .09, br, g); D.wall(pts, y2 - .04, .06, .09, br, g);
+    for (const p of [pts[0], pts[pts.length - 1]]) box(p[0] - .04, p[0] + .04, y1, y2, p[1] - .04, p[1] + .04, br, g); };
+  const north = [[XE + .28, ZN], ...nArc(R, Math.PI / 2, 0)];
+  pane(north, FL, EV - .02);
+  for (const x of [.25, 1.55]) box(x - .03, x + .03, FL, EV, ZN - .04, ZN + .04, br, g);                  // mullions
+  for (const i of [4, 8]) { const [x, z] = north[1 + i]; rod(V(x, FL, z), V(x, EV, z), .03, br, g); }
+  // roof: the same pale plane, 0.9 m past the north glass and round the corner (winter sun in at 32.6 degrees, summer sun out)
+  D.poly([...bal(), [XW, ZS], [XE, ZS]], EV + .22, .22, desMat.pale, g);
+  D.wall(bal().slice(0, -1), FL, 1.0, .025, desMat.glassRail, g);                                       // frameless glass rail on the ledge
+  // west window behind bronze louvres, as on the house
+  pane([[XW + .01, -14.6], [XW + .01, -10.0]], FL + .6, EV - .3);
+  for (let z = -14.65; z < -10.0; z += .22) box(XW + .08, XW + .18, FL + .45, EV - .15, z, z + .12, br, g);
+  for (const y of [FL + .4, EV - .15]) box(XW + .02, XW + .18, y, y + .05, -14.75, -9.9, br, g);
+  // south (lane) window, upper floor
+  pane([[-.2, ZS - .01], [1.9, ZS - .01]], FL + .9, EV - .3);
+  // solar on the studio roof, low tilt, set back from the edges
+  for (const x of [-.6, 1.2]) { const p = new THREE.Mesh(new THREE.BoxGeometry(1.7, .04, 1.0), desMat.pv); p.position.set(x + .85, EV + .34, -12.0); p.rotation.x = .17; p.castShadow = true; g.add(p); }
+  // ground floor: the old garage, brick kept. Roller door out, glazed entry in (bronze frame); north windows over the pool, one in the west room
+  pane([[-.55, -13.13], [.45, -13.13]], G + .05, G + 2.25);                                              // front door
+  pane([[.55, -13.13], [1.8, -13.13]], G + .8, G + 2.25);                                                // sidelight
+  box(.55, 1.8, G, G + .8, -13.14, -13.1, bz, g);                                                       // brick infill under it
+  pane([[-.1, ZN + .01], [1.5, ZN + .01]], G + .8, G + 2.2);
+  pane([[2.45, ZN + .01], [3.6, ZN + .01]], G + .8, G + 2.2);
+  // covered entry under the upper floor, which also roofs the top of the pool stair: brick boundary wall east, one bronze post at the open corner
+  box(XE, XE + .23, G, G + 2.5, ZS, -13.1, bz, g);
+  { const x = XW - .2, z = ZS + .2, y0 = ground(x, z); box(x - .06, x + .06, y0 - .1, FL - .3, z - .06, z + .06, br, g); }
+  box(XW - .26, XW - .14, FL - .5, FL - .3, ZS + .14, -10.5, br, g);                                    // steel edge beam back to the west room's pier line
+  // the car space: concrete deck at garage level, face-brick boundary wall to the neighbour, the pale slab overhead on two bronze posts
+  const slab = M({ color: 0xb4b0a7, roughness: .92 });
+  box(-.95, 1.85, G - .3, G + .05, -24, -13.1, slab, g);
+  { const z2 = ZC - .6, y2 = Math.min(ground(-.95, z2), ground(1.85, z2)) - .02; D.roofPlane(-.95, 1.85, -24, z2, G + .02, y2, .06, slab, g); }   // deck runs on at a gentle fall to meet the driveway ramp
+  D.wall([[-.86, ZS], [-.6, ZC]], G, 2.5, .23, bz, g);
+  for (const z of [-20.8, -25.3]) box(1.75, 1.87, G - .1, G + 2.5, z - .06, z + .06, br, g);
+  box(-.66, 1.87, G + 2.32, G + 2.5, ZC + .05, ZC + .4, br, g);                                         // edge beam at the lane end
+  for (const z0 of [-15.8]) { const cx = .42;   // one car shown in the front bay; the lane-end bay takes the second (tandem)
+    box(cx - .88, cx + .88, G + .43, G + 1.13, z0 - 4.3, z0, mats.car); box(cx - .78, cx + .78, G + 1.13, G + 1.58, z0 - 3.3, z0 - 1.1, mats.carGlass);
+    for (const [dx, dz] of [[-.83, -.8], [.83, -.8], [-.83, -3.5], [.83, -3.5]]) { const w = new THREE.Mesh(new THREE.CylinderGeometry(.32, .32, .2, 14), mats.dark); w.rotation.z = Math.PI / 2; w.position.set(cx + dx, G + .4, z0 + dz); g.add(w); } }
 });
 
 // ---- switching between visions ----
