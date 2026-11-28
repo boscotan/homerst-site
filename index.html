@@ -122,7 +122,7 @@ select{font:500 13px var(--f-body);padding:6px 8px;border-radius:7px;border:1px 
       <h2>Inspired designs</h2>
       <div class="row" id="desRow"></div>
       <p class="fine" id="desNote" hidden></p>
-      <p class="fine">Each one is built on the After frame: same footprint, floor levels, extension and roof terrace. Click again to go back to the After.</p>
+      <p class="fine">Default is your own design. Each inspired one is built on its frame: same footprint, floor levels, extension and roof terrace.</p>
     </section>
     <section>
       <h2>Floor plans (overhead)</h2>
@@ -1901,7 +1901,7 @@ function designOff() {
   if (!desOn) return; const d = DES[desOn]; d.g.visible = false; desOn = '';
   Object.assign(mats.render, { map: MAT0.render.map, roughness: MAT0.render.r, metalness: MAT0.render.m }); mats.render.needsUpdate = true;
   houseRoof.forEach(o => o.visible = true); if (balMem) { balBig.visible = balMem[0]; balJul.visible = balMem[1]; balMem = null; }
-  document.querySelectorAll('#desRow button').forEach(b => b.setAttribute('aria-pressed', 'false')); $('desNote').hidden = true;
+  document.querySelectorAll('#desRow button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.d === ''))); $('desNote').hidden = true;
 }
 function setDesign(k) {
   if (!k || k === desOn) { designOff(); setState(S.state); return; }
@@ -1918,6 +1918,8 @@ function setDesign(k) {
   $('desNote').textContent = d.note; $('desNote').hidden = false;
 }
 { const row = $('desRow');
+  { const b = document.createElement('button'); b.className = 'btn'; b.dataset.d = ''; b.textContent = 'Default'; b.title = 'Your own design, no inspired layer';
+    b.setAttribute('aria-pressed', 'true'); b.addEventListener('click', () => setDesign('')); row.appendChild(b); }
   for (const [k, d] of Object.entries(DES)) { const b = document.createElement('button'); b.className = 'btn'; b.dataset.d = k; b.textContent = d.name.replace(' (settled design)', ''); b.setAttribute('aria-pressed', 'false'); b.addEventListener('click', () => setDesign(desOn === k ? '' : k)); row.appendChild(b); }
 }
 window.homerDesign = setDesign;
